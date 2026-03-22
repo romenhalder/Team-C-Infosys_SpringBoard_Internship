@@ -1,0 +1,498 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ═══════════════════════════════════════════════
+   PHARMATRACK PRO — Dark Clinical Design System
+   ═══════════════════════════════════════════════ */
+
+:root {
+  /* Background */
+  --bg-primary: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-surface-hover: #334155;
+  --bg-elevated: #1e293b;
+
+  /* Borders */
+  --border-default: #334155;
+  --border-subtle: rgba(148, 163, 184, 0.1);
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  /* Accent Colors */
+  --accent-cyan: #22d3ee;
+  --accent-cyan-hover: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-emerald-hover: #059669;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+  --accent-purple: #a78bfa;
+  --accent-sky: #38bdf8;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(148, 163, 184, 0.15);
+  --glass-blur: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow-cyan: 0 0 20px rgba(34,211,238,0.15);
+  --shadow-glow-emerald: 0 0 20px rgba(16,185,129,0.15);
+
+  /* Typography */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+
+/* ─── Base ─── */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ─── Tailwind Component Layer ─── */
+@layer components {
+
+  /* ▸ Buttons */
+  .btn-primary {
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, var(--accent-cyan), #0891b2);
+    color: var(--text-inverse);
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(34,211,238,0.25);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(34,211,238,0.35);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    padding: 0.5rem 1.25rem;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-weight: 500;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-secondary:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--accent-cyan);
+  }
+
+  .btn-success {
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, var(--accent-emerald), #059669);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+  }
+  .btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(16,185,129,0.35);
+  }
+
+  .btn-danger {
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, var(--accent-rose), #e11d48);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(244,63,94,0.3);
+  }
+
+  /* ▸ Cards */
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(148, 163, 184, 0.25);
+  }
+
+  .card-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ▸ Inputs */
+  .input-field {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  .input-field::placeholder {
+    color: var(--text-muted);
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(34,211,238,0.15);
+  }
+  .input-field:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ▸ Sidebar Links */
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.625rem 0.75rem;
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .sidebar-link:hover {
+    background: rgba(34,211,238,0.08);
+    color: var(--accent-cyan);
+  }
+  .sidebar-link.active {
+    background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(6,182,212,0.1));
+    color: var(--accent-cyan);
+    border: 1px solid rgba(34,211,238,0.2);
+  }
+
+  /* ▸ Semantic Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+  .badge-success { background: rgba(16,185,129,0.15); color: #34d399; }
+  .badge-warning { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge-danger  { background: rgba(244,63,94,0.15);  color: #fb7185; }
+  .badge-info    { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+  .badge-neutral { background: rgba(100,116,139,0.2);  color: #94a3b8; }
+  .badge-purple  { background: rgba(167,139,250,0.15); color: #a78bfa; }
+
+  /* Schedule-specific badges */
+  .badge-schedule-H   { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-schedule-H1  { background: rgba(249,115,22,0.15);  color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+  .badge-schedule-X   { background: rgba(244,63,94,0.15);   color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
+  .badge-schedule-G   { background: rgba(56,189,248,0.15);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); }
+  .badge-schedule-OTC { background: rgba(16,185,129,0.15);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+  /* ▸ Data Tables */
+  .table-dark {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table-dark thead {
+    background: rgba(15, 23, 42, 0.6);
+    border-bottom: 1px solid var(--border-default);
+  }
+  .table-dark thead th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .table-dark tbody tr {
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.15s ease;
+  }
+  .table-dark tbody tr:nth-child(even) {
+    background: rgba(15, 23, 42, 0.3);
+  }
+  .table-dark tbody tr:hover {
+    background: rgba(34, 211, 238, 0.05);
+  }
+  .table-dark tbody td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+
+  /* ▸ Stat Card */
+  .stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  .stat-card:hover {
+    border-color: rgba(34,211,238,0.3);
+    box-shadow: var(--shadow-glow-cyan);
+    transform: translateY(-2px);
+  }
+  .stat-card .stat-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stat-card .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-top: 0.25rem;
+    line-height: 1.2;
+  }
+  .stat-card .stat-delta-up {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #34d399;
+  }
+  .stat-card .stat-delta-down {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fb7185;
+  }
+}
+
+/* ═══════════════════════════
+   ANIMATIONS & MOTION
+   ═══════════════════════════ */
+
+/* ▸ Staggered card entrance */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.3s ease-out forwards;
+  opacity: 0;
+}
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 160ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 320ms; }
+.stagger-6 { animation-delay: 400ms; }
+
+/* ▸ Shimmer loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 25%,
+    var(--bg-surface-hover) 50%,
+    var(--bg-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.375rem;
+}
+.skeleton-text {
+  height: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.skeleton-heading {
+  height: 1.5rem;
+  width: 60%;
+  margin-bottom: 0.75rem;
+}
+.skeleton-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+}
+
+/* ▸ Toast notification slide-in */
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes toastFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ▸ Subtle pulse for alerts */
+@keyframes subtlePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-subtle-pulse {
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+/* ▸ Glow border effect */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(34,211,238,0.2); }
+  50% { box-shadow: 0 0 20px rgba(34,211,238,0.4); }
+}
+
+/* ▸ Spin animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin 2s linear infinite;
+}
+
+/* ═══════════════════════════
+   CUSTOM SCROLLBAR (Dark)
+   ═══════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ═══════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════ */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, var(--accent-cyan), #0891b2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-emerald {
+  background: linear-gradient(135deg, var(--accent-emerald), #059669);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-glow-cyan {
+  border-color: rgba(34,211,238,0.3);
+  box-shadow: var(--shadow-glow-cyan);
+}
+
+.border-glow-emerald {
+  border-color: rgba(16,185,129,0.3);
+  box-shadow: var(--shadow-glow-emerald);
+}
+
+/* ▸ Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+.empty-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 1rem;
+}
+.empty-state p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  max-width: 20rem;
+}
+
+/* ▸ Form validation states */
+.input-valid {
+  border-color: var(--accent-emerald) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.1) !important;
+}
+.input-invalid {
+  border-color: var(--accent-rose) !important;
+  box-shadow: 0 0 0 3px rgba(244,63,94,0.1) !important;
+}
+.validation-error {
+  font-size: 0.75rem;
+  color: var(--accent-rose);
+  margin-top: 0.25rem;
+}
+.validation-success {
+  font-size: 0.75rem;
+  color: var(--accent-emerald);
+  margin-top: 0.25rem;
+}
+
+/* ▸ Mesh gradient background for auth pages */
+.bg-mesh-dark {
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(at 20% 80%, rgba(34,211,238,0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, rgba(16,185,129,0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(167,139,250,0.04) 0px, transparent 50%);
+}

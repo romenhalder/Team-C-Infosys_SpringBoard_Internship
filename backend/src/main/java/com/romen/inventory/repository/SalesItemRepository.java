@@ -1,0 +1,30 @@
+package com.romen.inventory.repository;
+
+import com.romen.inventory.entity.SalesItem;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface SalesItemRepository extends JpaRepository<SalesItem, Long> {
+
+    List<SalesItem> findBySalesOrderId(Long salesOrderId);
+
+    List<SalesItem> findByMedicationId(Long medicationId);
+
+    @Query("SELECT si.medication.name, SUM(si.quantity) as totalQty, SUM(si.totalPrice) as totalRevenue " +
+            "FROM SalesItem si WHERE si.salesOrder.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY si.medication.id, si.medication.name ORDER BY totalQty DESC")
+    List<Object[]> findTopSellingProducts(@Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT si.medication.category.name, SUM(si.quantity) as totalQty, SUM(si.totalPrice) as totalRevenue " +
+            "FROM SalesItem si WHERE si.salesOrder.createdAt BETWEEN :startDate AND :endDate " +
+            "GROUP BY si.medication.category.id, si.medication.category.name ORDER BY totalRevenue DESC")
+    List<Object[]> findSalesByCategory(@Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+}

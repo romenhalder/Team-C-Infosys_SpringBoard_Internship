@@ -1,0 +1,38 @@
+/* ═══════════════════════════════════════
+   PharmaTrack Pro — App Shell Layout
+   ═══════════════════════════════════════ */
+
+#root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: #f1f5f9;
+}
+
+/* Focus visible (for keyboard nav) */
+:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Transition on all interactive elements */
+a, button, input, select, textarea {
+  transition: all 0.2s ease;
+}
+
+/* Remove default link underline in app */
+a {
+  text-decoration: none;
+  color: inherit;
+}

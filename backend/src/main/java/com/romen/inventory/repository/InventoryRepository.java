@@ -1,0 +1,44 @@
+// repository/InventoryRepository.java
+package com.romen.inventory.repository;
+
+import com.romen.inventory.entity.Inventory;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface InventoryRepository extends JpaRepository<Inventory, Long> {
+
+    Optional<Inventory> findByMedicationId(Long medicationId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventory i WHERE i.medication.id = :medicationId")
+    Optional<Inventory> findByMedicationIdWithLock(@Param("medicationId") Long medicationId);
+
+    List<Inventory> findByIsLowStockTrue();
+
+    List<Inventory> findByIsOutOfStockTrue();
+
+    @Query("SELECT i FROM Inventory i WHERE i.medication.category.id = :categoryId")
+    List<Inventory> findByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT i FROM Inventory i WHERE i.currentQuantity <= i.medication.minStockLevel")
+    List<Inventory> findAllLowStock();
+
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.isLowStock = true")
+    Long countLowStock();
+
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.isOutOfStock = true")
+    Long countOutOfStock();
+
+    @Query("SELECT COALESCE(SUM(i.currentQuantity), 0) FROM Inventory i")
+    Integer getTotalStockQuantity();
+
+    boolean existsByMedicationId(Long medicationId);
+}
