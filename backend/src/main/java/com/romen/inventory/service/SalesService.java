@@ -1,6 +1,7 @@
 package com.romen.inventory.service;
 
 import com.romen.inventory.dto.SalesRequest;
+import com.romen.inventory.dto.SalesReturnRequest;
 import com.romen.inventory.dto.SalesResponse;
 import com.romen.inventory.entity.*;
 import com.romen.inventory.exception.ResourceNotFoundException;
@@ -31,6 +32,7 @@ public class SalesService {
     private final BatchRepository batchRepository;
     private final StockTransactionRepository stockTransactionRepository;
     private final ScheduleH1EntryRepository scheduleH1EntryRepository;
+    private final NarcoticEntryRepository narcoticEntryRepository;
     private final AlertService alertService;
 
     @Transactional
@@ -174,6 +176,30 @@ public class SalesService {
                     scheduleH1EntryRepository.save(h1Entry);
                 }
             }
+
+            // Auto-create NarcoticEntry for Schedule X drugs (regulatory requirement)
+            if (medication.getScheduleCategory() == Medication.ScheduleCategory.X) {
+                for (BatchAllocation alloc : batchAllocations) {
+                    NarcoticEntry narcoticEntry = NarcoticEntry.builder()
+                            .salesOrder(order)
+                            .medication(medication)
+                            .batch(alloc.batch)
+                            .patientName(request.getCustomerName() != null ? request.getCustomerName() : "N/A")
+                            .patientAddress(request.getPatientAddress())
+                            .doctorName(request.getDoctorName())
+                            .doctorRegNumber(request.getDoctorRegNumber())
+                            .quantity(alloc.quantity)
+                            .pharmacist(currentUser)
+                            .pharmacistApproved(true)
+                            .pharmacistApprovedAt(LocalDateTime.now())
+                            .approvalStatus(NarcoticEntry.ApprovalStatus.PHARMACIST_APPROVED)
+                            .notes("Auto-created during POS sale: " + order.getOrderNumber())
+                            .build();
+                    narcoticEntryRepository.save(narcoticEntry);
+                    log.info("Created NarcoticEntry for Schedule X drug: {} batch: {}",
+                            medication.getName(), alloc.batch.getBatchNumber());
+                }
+            }
         }
 
         order.setSubtotal(subtotal);
@@ -297,5 +323,78 @@ public class SalesService {
     public BigDecimal getSalesSummary(LocalDateTime startDate, LocalDateTime endDate) {
         BigDecimal total = salesOrderRepository.calculateTotalSales(startDate, endDate);
         return total != null ? total : BigDecimal.ZERO;
+    }
+
+    // ======== SALES RETURN ========
+
+    @Transactional
+    public SalesResponse createSalesReturn(SalesReturnRequest request, User currentUser) {
+        log.info("Processing sales return for order: {} by user: {}", request.getOrderNumber(), currentUser.getEmail());
+
+        SalesOrder order = salesOrderRepository.findByOrderNumber(request.getOrderNumber())
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + request.getOrderNumber()));
+
+        if (order.getOrderStatus() != SalesOrder.OrderStatus.COMPLETED) {
+            throw new IllegalArgumentException("Only completed orders can be returned. Current status: " + order.getOrderStatus());
+        }
+
+        for (SalesReturnRequest.ReturnItemRequest returnItem : request.getItems()) {
+            Medication medication = medicationRepository.findById(returnItem.getMedicationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Medication not found: " + returnItem.getMedicationId()));
+
+            // Find the original sale item to validate quantity
+            SalesItem originalItem = order.getItems().stream()
+                    .filter(si -> si.getMedication().getId().equals(returnItem.getMedicationId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Medication " + medication.getName() + " was not part of this order"));
+
+            if (returnItem.getQuantity() > originalItem.getQuantity()) {
+                throw new IllegalArgumentException(
+                        String.format("Return quantity (%d) exceeds sold quantity (%d) for %s",
+                                returnItem.getQuantity(), originalItem.getQuantity(), medication.getName()));
+            }
+
+            // Add stock back to batch
+            Batch batch = originalItem.getBatch();
+            if (batch != null) {
+                batch.setCurrentStock(batch.getCurrentStock() + returnItem.getQuantity());
+                batchRepository.save(batch);
+            }
+
+            // Update inventory
+            Inventory inventory = inventoryRepository.findByMedicationId(medication.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Inventory not found for: " + medication.getName()));
+            int prevQty = inventory.getCurrentQuantity();
+            int newQty = prevQty + returnItem.getQuantity();
+            inventory.setCurrentQuantity(newQty);
+            inventoryRepository.save(inventory);
+
+            // Create RETURN stock transaction
+            StockTransaction transaction = StockTransaction.builder()
+                    .medication(medication)
+                    .batch(batch)
+                    .transactionType(StockTransaction.TransactionType.RETURN)
+                    .quantity(returnItem.getQuantity())
+                    .previousQuantity(prevQty)
+                    .newQuantity(newQty)
+                    .unitPrice(originalItem.getUnitPrice())
+                    .reason("SALES RETURN - Order: " + order.getOrderNumber() + " - " + request.getReason())
+                    .batchNumber(batch != null ? batch.getBatchNumber() : null)
+                    .user(currentUser)
+                    .notes("Return processed by " + currentUser.getFullName())
+                    .build();
+            stockTransactionRepository.save(transaction);
+
+            alertService.checkAndCreateStockAlerts(medication, newQty);
+        }
+
+        order.setOrderStatus(SalesOrder.OrderStatus.RETURNED);
+        order.setNotes((order.getNotes() != null ? order.getNotes() + " | " : "") +
+                "RETURNED: " + request.getReason() + " by " + currentUser.getFullName());
+        salesOrderRepository.save(order);
+
+        log.info("Sales return completed for order: {}", order.getOrderNumber());
+        return SalesResponse.fromEntity(order);
     }
 }

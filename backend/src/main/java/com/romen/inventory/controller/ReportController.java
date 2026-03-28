@@ -59,6 +59,16 @@ public class ReportController {
         return ResponseEntity.ok(report);
     }
 
+    @GetMapping("/revenue")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getRevenueReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+
+        Map<String, Object> report = reportService.generateRevenueReport(startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
+
     @GetMapping("/stock/csv")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<byte[]> downloadStockReportCSV(
@@ -109,4 +119,80 @@ public class ReportController {
                 .headers(headers)
                 .body(csvData);
     }
+
+    @GetMapping("/revenue/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> downloadRevenueReportCSV(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+
+        byte[] csvData = reportService.generateRevenueReportCSV(startDate, endDate);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "revenue-report.csv");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(csvData);
+    }
+
+    // ========== NEW REPORT ENDPOINTS ==========
+
+    @GetMapping("/profit-loss")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getProfitLossReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(reportService.generateProfitLossReport(startDate, endDate));
+    }
+
+    @GetMapping("/expiry-loss")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getExpiryLossReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        return ResponseEntity.ok(reportService.generateExpiryLossReport(startDate, endDate));
+    }
+
+    @GetMapping("/inventory-valuation")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<Map<String, Object>> getInventoryValuation() {
+        return ResponseEntity.ok(reportService.generateInventoryValuation());
+    }
+
+    @GetMapping("/profit-loss/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> downloadProfitLossCSV(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        byte[] csvData = reportService.generateProfitLossReportCSV(startDate, endDate);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "profit-loss-report.csv");
+        return ResponseEntity.ok().headers(headers).body(csvData);
+    }
+
+    @GetMapping("/expiry-loss/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> downloadExpiryLossCSV(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        byte[] csvData = reportService.generateExpiryLossReportCSV(startDate, endDate);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "expiry-loss-report.csv");
+        return ResponseEntity.ok().headers(headers).body(csvData);
+    }
+
+    @GetMapping("/inventory-valuation/csv")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<byte[]> downloadInventoryValuationCSV() {
+        byte[] csvData = reportService.generateInventoryValuationCSV();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDispositionFormData("attachment", "inventory-valuation-report.csv");
+        return ResponseEntity.ok().headers(headers).body(csvData);
+    }
 }
+

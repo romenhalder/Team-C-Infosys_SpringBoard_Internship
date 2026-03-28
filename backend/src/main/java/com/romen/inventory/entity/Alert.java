@@ -81,6 +81,8 @@ public class Alert {
         OVERSTOCK,              // Stock above maximum level
         BATCH_QUARANTINED,      // Batch quarantined (expired/recalled)
         SCHEDULE_H1_PENDING,    // Schedule H1 entry pending compliance
+        NARCOTIC_DISPENSED,     // Schedule X drug dispensed — requires supervisor approval
+        COMPLIANCE_VIOLATION,   // Regulatory compliance issue detected
         USER_PASSWORD_RESET     // Employee/Manager requested password reset
     }
 

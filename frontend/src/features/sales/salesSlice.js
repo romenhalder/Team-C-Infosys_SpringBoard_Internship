@@ -26,6 +26,18 @@ export const createSale = createAsyncThunk(
   }
 );
 
+export const createSalesReturn = createAsyncThunk(
+  'sales/createReturn',
+  async (returnData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/sales/return', returnData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to process return');
+    }
+  }
+);
+
 export const fetchRecentSales = createAsyncThunk(
   'sales/fetchRecent',
   async (limit = 10, { rejectWithValue }) => {

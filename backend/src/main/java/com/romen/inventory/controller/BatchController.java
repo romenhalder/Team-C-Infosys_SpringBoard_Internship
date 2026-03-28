@@ -118,4 +118,23 @@ public class BatchController {
     public ResponseEntity<Map<String, Object>> getBatchSummary(@PathVariable Long medicationId) {
         return ResponseEntity.ok(batchService.getBatchSummary(medicationId));
     }
+
+    @GetMapping("/all-fefo")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<List<BatchResponse>> getAllBatchesFEFO() {
+        return ResponseEntity.ok(batchService.getAllBatchesFEFO());
+    }
+
+    @GetMapping("/by-category")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<List<BatchResponse>> getBatchesByExpiryCategory(
+            @RequestParam String category) {
+        return ResponseEntity.ok(batchService.getBatchesByExpiryCategory(category));
+    }
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'EMPLOYEE')")
+    public ResponseEntity<Map<String, Object>> getBatchDashboard() {
+        return ResponseEntity.ok(batchService.getDashboardStats());
+    }
 }

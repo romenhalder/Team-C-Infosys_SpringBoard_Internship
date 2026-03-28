@@ -41,7 +41,7 @@ const Login = () => {
   const isFieldValid = (field) => {
     if (!touched[field]) return null;
     if (field === 'identifier') return formData.identifier.length >= 3;
-    if (field === 'password') return formData.password.length >= 4;
+    if (field === 'password') return formData.password.length >= 6;
     return true;
   };
 
@@ -143,7 +143,7 @@ const Login = () => {
                   />
                 </div>
                 {isFieldValid('password') === false && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1.5 ml-1">Minimum 4-character encryption</p>
+                  <p className="text-[10px] font-bold text-rose-500 mt-1.5 ml-1">Minimum 6-character encryption</p>
                 )}
               </div>
 

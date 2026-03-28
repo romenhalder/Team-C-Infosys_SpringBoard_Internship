@@ -38,4 +38,8 @@ public class BatchResponse {
     private Boolean isExpired;
     private Boolean isExpiringSoon;
     private Integer daysUntilExpiry;
+    private String expiryCategory;   // EXPIRED, CRITICAL, WARNING, SAFE, NORMAL
+    private String expiryColor;      // gray, red, yellow, blue, green
+    private Boolean isDispensable;
+    private Integer fefoRank;        // FEFO priority ranking (1 = earliest expiry)
 }

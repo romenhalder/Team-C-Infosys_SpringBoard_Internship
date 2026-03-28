@@ -110,4 +110,14 @@ public class SalesController {
         BigDecimal total = salesService.getSalesSummary(startDate, endDate);
         return ResponseEntity.ok(Map.of("totalSales", total));
     }
+
+    @PostMapping("/return")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<SalesResponse> createSalesReturn(
+            @Valid @RequestBody com.romen.inventory.dto.SalesReturnRequest request,
+            Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        SalesResponse response = salesService.createSalesReturn(request, currentUser);
+        return ResponseEntity.ok(response);
+    }
 }

@@ -19,6 +19,10 @@ import {
   fetchStockReport,
   fetchSalesReport,
   fetchUsageReport,
+  fetchRevenueReport,
+  fetchProfitLossReport,
+  fetchExpiryLossReport,
+  fetchInventoryValuation,
   downloadReportCSV,
   clearReports,
 } from './reportSlice';
@@ -31,7 +35,7 @@ const COLORS = ['#06b6d4', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'
 
 const Reports = () => {
   const dispatch = useDispatch();
-  const { analytics, stockReport, salesReport, usageReport, loading, error } = useSelector((state) => state.reports);
+  const { analytics, stockReport, salesReport, usageReport, revenueReport, profitLossReport, expiryLossReport, inventoryValuation, loading, error } = useSelector((state) => state.reports);
 
   const [dateRange, setDateRange] = useState({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -58,8 +62,20 @@ const Reports = () => {
       case 'sales':
         dispatch(fetchSalesReport({ startDate: start.toISOString(), endDate: end.toISOString() }));
         break;
+      case 'revenue':
+        dispatch(fetchRevenueReport({ startDate: start.toISOString(), endDate: end.toISOString() }));
+        break;
       case 'usage':
         dispatch(fetchUsageReport({ startDate: start.toISOString(), endDate: end.toISOString() }));
+        break;
+      case 'profit-loss':
+        dispatch(fetchProfitLossReport({ startDate: start.toISOString(), endDate: end.toISOString() }));
+        break;
+      case 'expiry-loss':
+        dispatch(fetchExpiryLossReport({ startDate: start.toISOString(), endDate: end.toISOString() }));
+        break;
+      case 'inventory-valuation':
+        dispatch(fetchInventoryValuation());
         break;
       default:
         break;
@@ -731,16 +747,24 @@ const Reports = () => {
 
   const tabs = [
     { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon },
-    { id: 'stock', label: 'Stock Report', icon: CubeIcon },
-    { id: 'sales', label: 'Sales Report', icon: CurrencyRupeeIcon },
-    { id: 'usage', label: 'Usage Report', icon: ArrowPathIcon },
+    { id: 'stock', label: 'Stock', icon: CubeIcon },
+    { id: 'sales', label: 'Sales', icon: CurrencyRupeeIcon },
+    { id: 'revenue', label: 'Revenue', icon: CurrencyRupeeIcon },
+    { id: 'profit-loss', label: 'P&L', icon: ArrowTrendingUpIcon },
+    { id: 'expiry-loss', label: 'Expiry Loss', icon: ExclamationTriangleIcon },
+    { id: 'inventory-valuation', label: 'Valuation', icon: CubeIcon },
+    { id: 'usage', label: 'Usage', icon: ArrowPathIcon },
   ];
 
   const getReportStatus = (tab) => {
     switch (tab) {
       case 'stock': return stockReport ? 'ready' : 'empty';
       case 'sales': return salesReport ? 'ready' : 'empty';
+      case 'revenue': return revenueReport ? 'ready' : 'empty';
       case 'usage': return usageReport ? 'ready' : 'empty';
+      case 'profit-loss': return profitLossReport ? 'ready' : 'empty';
+      case 'expiry-loss': return expiryLossReport ? 'ready' : 'empty';
+      case 'inventory-valuation': return inventoryValuation ? 'ready' : 'empty';
       default: return 'ready';
     }
   };
@@ -1182,6 +1206,70 @@ const Reports = () => {
       )}
 
       {/* =================== */}
+      {/* REVENUE REPORT TAB */}
+      {/* =================== */}
+      {activeTab === 'revenue' && revenueReport && (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Gross Revenue', value: formatCurrency(revenueReport.grossRevenue), bg: 'bg-sky-500/10', text: 'text-sky-300' },
+              { label: 'Net Revenue', value: formatCurrency(revenueReport.netRevenue), bg: 'bg-emerald-500/10', text: 'text-emerald-300' },
+              { label: 'Total Orders', value: revenueReport.totalOrders, bg: 'bg-purple-500/10', text: 'text-purple-300' },
+              { label: 'Avg Order Value', value: formatCurrency(revenueReport.averageOrderValue), bg: 'bg-amber-500/10', text: 'text-amber-300' },
+            ].map((s) => (
+              <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
+                <p className="text-xs font-medium text-slate-500 mb-2">{s.label}</p>
+                <p className={`text-2xl font-bold ${s.text}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">Total CGST</p>
+              <p className="text-xl font-bold text-cyan-400">{formatCurrency(revenueReport.totalCgst)}</p>
+            </div>
+            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">Total SGST</p>
+              <p className="text-xl font-bold text-cyan-400">{formatCurrency(revenueReport.totalSgst)}</p>
+            </div>
+            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">Total Discount</p>
+              <p className="text-xl font-bold text-rose-400">{formatCurrency(revenueReport.totalDiscount)}</p>
+            </div>
+          </div>
+
+          {revenueReport.revenueByPaymentMethod && Object.keys(revenueReport.revenueByPaymentMethod).length > 0 && (
+            <div className="bg-slate-900 rounded-xl border border-slate-700 p-6">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">Revenue by Payment Method</h3>
+              <div className="space-y-3">
+                {Object.entries(revenueReport.revenueByPaymentMethod).map(([method, amount]) => (
+                  <div key={method} className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">{method}</span>
+                    <span className="font-semibold text-cyan-400">{formatCurrency(amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {revenueReport.revenueByCategory && Object.keys(revenueReport.revenueByCategory).length > 0 && (
+            <div className="bg-slate-900 rounded-xl border border-slate-700 p-6">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">Revenue by Category</h3>
+              <div className="space-y-3">
+                {Object.entries(revenueReport.revenueByCategory).map(([category, amount]) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <span className="text-sm text-slate-400">{category}</span>
+                    <span className="font-semibold text-emerald-400">{formatCurrency(amount)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* =================== */}
       {/* USAGE REPORT TAB    */}
       {/* =================== */}
       {activeTab === 'usage' && usageReport && (
@@ -1258,8 +1346,173 @@ const Reports = () => {
         </div>
       )}
 
+      {/* ===== PROFIT / LOSS REPORT ===== */}
+      {activeTab === 'profit-loss' && profitLossReport && !loading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total Revenue', value: formatCurrency(profitLossReport.totalRevenue), color: 'text-cyan-400' },
+              { label: 'Total Cost', value: formatCurrency(profitLossReport.totalCost), color: 'text-amber-400' },
+              { label: 'Net Profit', value: formatCurrency(profitLossReport.totalProfit), color: Number(profitLossReport.totalProfit) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+              { label: 'Margin', value: profitLossReport.profitMargin + '%', color: 'text-violet-400' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-slate-900 rounded-xl p-5 border border-slate-700 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{kpi.label}</p>
+                <p className={`text-2xl font-black mt-2 ${kpi.color}`}>{kpi.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {profitLossReport.categoryBreakdown?.length > 0 && (
+            <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+              <h3 className="text-lg font-bold text-slate-300 mb-4">Profit by Category</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-white">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Category</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Revenue</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Cost</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {profitLossReport.categoryBreakdown.map((cat, i) => (
+                      <tr key={i} className="hover:bg-slate-800/50">
+                        <td className="px-4 py-3 text-sm font-medium">{cat.category}</td>
+                        <td className="px-4 py-3 text-sm text-cyan-400">{formatCurrency(cat.revenue)}</td>
+                        <td className="px-4 py-3 text-sm text-amber-400">{formatCurrency(cat.cost)}</td>
+                        <td className={`px-4 py-3 text-sm font-bold ${Number(cat.profit) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {formatCurrency(cat.profit)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== EXPIRY LOSS REPORT ===== */}
+      {activeTab === 'expiry-loss' && expiryLossReport && !loading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Expired Value', value: formatCurrency(expiryLossReport.totalExpiredValue), color: 'text-rose-400' },
+              { label: 'At-Risk Value', value: formatCurrency(expiryLossReport.totalAtRiskValue), color: 'text-amber-400' },
+              { label: 'Total Loss', value: formatCurrency(expiryLossReport.totalLoss), color: 'text-rose-500' },
+              { label: 'At-Risk Batches', value: expiryLossReport.atRiskBatchCount || 0, color: 'text-amber-400' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-slate-900 rounded-xl p-5 border border-slate-700 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{kpi.label}</p>
+                <p className={`text-2xl font-black mt-2 ${kpi.color}`}>{kpi.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {expiryLossReport.atRiskBatches?.length > 0 && (
+            <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+              <h3 className="text-lg font-bold text-amber-400 mb-4">⚠️ At-Risk Batches (Expiring in 90 Days)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-white">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Medication</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Batch</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Expiry</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Days Left</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Stock</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Value</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Category</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {expiryLossReport.atRiskBatches.map((batch, i) => (
+                      <tr key={i} className="hover:bg-slate-800/50">
+                        <td className="px-4 py-3 text-sm font-medium">{batch.medicationName}</td>
+                        <td className="px-4 py-3 text-sm text-slate-400 font-mono">{batch.batchNumber}</td>
+                        <td className="px-4 py-3 text-sm text-slate-400">{batch.expiryDate}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                            batch.daysUntilExpiry <= 30 ? 'bg-rose-500/20 text-rose-400' :
+                            batch.daysUntilExpiry <= 60 ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {batch.daysUntilExpiry}d
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold">{batch.currentStock}</td>
+                        <td className="px-4 py-3 text-sm text-amber-400 font-bold">{formatCurrency(batch.atRiskValue)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                            batch.expiryCategory === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' :
+                            batch.expiryCategory === 'WARNING' ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-blue-500/20 text-blue-400'
+                          }`}>
+                            {batch.expiryCategory}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== INVENTORY VALUATION REPORT ===== */}
+      {activeTab === 'inventory-valuation' && inventoryValuation && !loading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Total MRP Value', value: formatCurrency(inventoryValuation.totalMRPValue), color: 'text-cyan-400' },
+              { label: 'Total Cost Value', value: formatCurrency(inventoryValuation.totalCostValue), color: 'text-amber-400' },
+              { label: 'Potential Profit', value: formatCurrency(inventoryValuation.totalPotentialProfit), color: 'text-emerald-400' },
+              { label: 'Active Batches', value: inventoryValuation.totalBatches || 0, color: 'text-violet-400' },
+            ].map((kpi, i) => (
+              <div key={i} className="bg-slate-900 rounded-xl p-5 border border-slate-700 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{kpi.label}</p>
+                <p className={`text-2xl font-black mt-2 ${kpi.color}`}>{kpi.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {inventoryValuation.categoryValuation?.length > 0 && (
+            <div className="bg-slate-900 rounded-xl p-6 border border-slate-700">
+              <h3 className="text-lg font-bold text-slate-300 mb-4">Valuation by Category</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-white">
+                  <thead className="bg-slate-800">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Category</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">MRP Value</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Cost Value</th>
+                      <th className="px-4 py-3 text-xs font-bold text-slate-500 uppercase">Potential Profit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-700">
+                    {inventoryValuation.categoryValuation.map((cat, i) => (
+                      <tr key={i} className="hover:bg-slate-800/50">
+                        <td className="px-4 py-3 text-sm font-medium">{cat.category}</td>
+                        <td className="px-4 py-3 text-sm text-cyan-400">{formatCurrency(cat.mrpValue)}</td>
+                        <td className="px-4 py-3 text-sm text-amber-400">{formatCurrency(cat.costValue)}</td>
+                        <td className="px-4 py-3 text-sm text-emerald-400 font-bold">{formatCurrency(cat.potentialProfit)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Empty state for report tabs */}
-      {activeTab !== 'analytics' && !stockReport && !salesReport && !usageReport && !loading && (
+      {activeTab !== 'analytics' && !stockReport && !salesReport && !revenueReport && !usageReport && !profitLossReport && !expiryLossReport && !inventoryValuation && !loading && (
         <div className="text-center py-16 bg-slate-900 rounded-xl shadow-sm border border-slate-700">
           <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4">
             <ChartBarIcon className="h-10 w-10 text-cyan-400" />

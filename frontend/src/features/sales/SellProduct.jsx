@@ -38,11 +38,12 @@ const SellProduct = () => {
     customerName: '',
     customerMobile: '',
     doctorName: '',
-    doctorRegNo: ''
+    doctorRegNumber: ''
   });
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [prescriptionError, setPrescriptionError] = useState(false);
 
   /* ─── Fetch Data ─── */
   useEffect(() => {
@@ -86,7 +87,7 @@ const SellProduct = () => {
       return;
     }
 
-    const existingIdx = cart.findIndex(item => item.productId === product.id);
+    const existingIdx = cart.findIndex(item => item.medicationId === product.id);
     if (existingIdx > -1) {
       if (cart[existingIdx].quantity + 1 > available) {
         alert('Inventory Limit: Insufficient batch stock for this SKU.');
@@ -98,18 +99,19 @@ const SellProduct = () => {
       setCart(newCart);
     } else {
       setCart([...cart, {
-        productId: product.id,
+        medicationId: product.id,
         productName: product.name,
         unitPrice: product.mrp || product.price || 0,
         quantity: 1,
-        totalPrice: product.mrp || product.price || 0
+        totalPrice: product.mrp || product.price || 0,
+        scheduleCategory: product.regulatorySchedule || product.scheduleCategory
       }]);
     }
   };
 
   const updateQuantity = (idx, delta) => {
     const newCart = [...cart];
-    const product = products.find(p => p.id === newCart[idx].productId);
+    const product = products.find(p => p.id === newCart[idx].medicationId);
     const available = product.availableStock !== undefined ? product.availableStock : product.currentStock;
 
     if (newCart[idx].quantity + delta > available) {
@@ -131,14 +133,25 @@ const SellProduct = () => {
   };
 
   /* ─── Execution ─── */
+  const requiresPrescription = cart.some(item => 
+    item.scheduleCategory === 'H' || item.scheduleCategory === 'H1' || item.scheduleCategory === 'X'
+  );
+
   const handleCheckout = () => {
     if (cart.length === 0) return alert('Session Empty: No items staged for dispensing.');
     
+    if (requiresPrescription && (!customerInfo.doctorName || !customerInfo.doctorRegNumber)) {
+      setPrescriptionError(true);
+      alert('Prescription Required: Scheduled drugs (H/H1/X) mandate Doctor Name and Reg Number.');
+      return;
+    }
+    
+    setPrescriptionError(false);
     const payload = {
       ...customerInfo,
       paymentMethod,
       items: cart.map(item => ({
-        productId: item.productId,
+        medicationId: item.medicationId,
         quantity: item.quantity,
         unitPrice: item.unitPrice
       }))
@@ -266,16 +279,22 @@ const SellProduct = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <input 
-                  className="input-field h-10 !bg-slate-950/30 border-slate-800 text-xs" 
-                  placeholder="Doctor Name"
+                  className={`input-field h-10 !bg-slate-950/30 text-xs ${prescriptionError && !customerInfo.doctorName ? 'border-rose-500' : 'border-slate-800'}`} 
+                  placeholder={requiresPrescription ? "Doctor Name *" : "Doctor Name"}
                   value={customerInfo.doctorName}
-                  onChange={(e) => setCustomerInfo({...customerInfo, doctorName: e.target.value})}
+                  onChange={(e) => {
+                    setCustomerInfo({...customerInfo, doctorName: e.target.value});
+                    if (e.target.value) setPrescriptionError(false);
+                  }}
                 />
                 <input 
-                  className="input-field h-10 !bg-slate-950/30 border-slate-800 text-xs" 
-                  placeholder="Reg No. (Optional)"
-                  value={customerInfo.doctorRegNo}
-                  onChange={(e) => setCustomerInfo({...customerInfo, doctorRegNo: e.target.value})}
+                  className={`input-field h-10 !bg-slate-950/30 text-xs ${prescriptionError && !customerInfo.doctorRegNumber ? 'border-rose-500' : 'border-slate-800'}`} 
+                  placeholder={requiresPrescription ? "Reg No. *" : "Reg No. (Optional)"}
+                  value={customerInfo.doctorRegNumber}
+                  onChange={(e) => {
+                    setCustomerInfo({...customerInfo, doctorRegNumber: e.target.value});
+                    if (e.target.value) setPrescriptionError(false);
+                  }}
                 />
               </div>
            </div>

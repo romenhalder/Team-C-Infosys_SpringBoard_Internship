@@ -8,6 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "batches",
@@ -88,10 +89,44 @@ public class Batch {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // --- Expiry Category System (30-60-90 Rule) ---
+
+    public enum ExpiryCategory {
+        EXPIRED,    // Already expired
+        CRITICAL,   // 0-30 days remaining — Stop sales / Contact supplier
+        WARNING,    // 31-60 days remaining — Start clearance
+        SAFE,       // 61-90 days remaining — Monitor closely
+        NORMAL      // >90 days remaining — Normal sales
+    }
+
     public Integer getAvailableStock() {
         int curr = currentStock != null ? currentStock : 0;
         int res = reservedStock != null ? reservedStock : 0;
         return curr - res;
+    }
+
+    public long getDaysUntilExpiry() {
+        if (expiryDate == null) return Long.MAX_VALUE;
+        return ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
+    }
+
+    public ExpiryCategory getExpiryCategory() {
+        long days = getDaysUntilExpiry();
+        if (days < 0) return ExpiryCategory.EXPIRED;
+        if (days <= 30) return ExpiryCategory.CRITICAL;
+        if (days <= 60) return ExpiryCategory.WARNING;
+        if (days <= 90) return ExpiryCategory.SAFE;
+        return ExpiryCategory.NORMAL;
+    }
+
+    public String getExpiryCategoryColor() {
+        return switch (getExpiryCategory()) {
+            case EXPIRED -> "gray";
+            case CRITICAL -> "red";
+            case WARNING -> "yellow";
+            case SAFE -> "blue";
+            case NORMAL -> "green";
+        };
     }
 
     public boolean isExpired() {
@@ -102,6 +137,10 @@ public class Batch {
         if (expiryDate == null) return false;
         LocalDate threshold = LocalDate.now().plusDays(daysThreshold);
         return expiryDate.isBefore(threshold) && !isExpired();
+    }
+
+    public boolean isDispensable() {
+        return !isExpired() && !Boolean.TRUE.equals(isQuarantined) && getAvailableStock() > 0;
     }
 
     @PrePersist

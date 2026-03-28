@@ -227,10 +227,11 @@ public class BatchService {
 
     private Alert.AlertType getExpiryAlertType(LocalDate expiryDate, LocalDate today) {
         long daysUntilExpiry = ChronoUnit.DAYS.between(today, expiryDate);
-        if (daysUntilExpiry <= 30) {
-            return Alert.AlertType.EXPIRING_SOON;
+        if (daysUntilExpiry <= 0) {
+            return Alert.AlertType.EXPIRED;
         }
-        return Alert.AlertType.EXPIRING_SOON; // All expiring within 90 days
+        // All expiring within 90 days use EXPIRING_SOON, message contains urgency level
+        return Alert.AlertType.EXPIRING_SOON;
     }
 
     private String generateExpiryAlertMessage(Batch batch, LocalDate today) {
@@ -321,7 +322,11 @@ public class BatchService {
     }
 
     private BatchResponse mapToResponse(Batch batch) {
-        long daysUntil = ChronoUnit.DAYS.between(LocalDate.now(), batch.getExpiryDate());
+        return mapToResponseWithRank(batch, null);
+    }
+
+    private BatchResponse mapToResponseWithRank(Batch batch, Integer rank) {
+        long daysUntil = batch.getDaysUntilExpiry();
         return BatchResponse.builder()
                 .id(batch.getId())
                 .medicationId(batch.getMedication().getId())
@@ -345,6 +350,10 @@ public class BatchService {
                 .isExpired(batch.isExpired())
                 .isExpiringSoon(batch.isExpiringSoon(30))
                 .daysUntilExpiry((int) daysUntil)
+                .expiryCategory(batch.getExpiryCategory().name())
+                .expiryColor(batch.getExpiryCategoryColor())
+                .isDispensable(batch.isDispensable())
+                .fefoRank(rank)
                 .build();
     }
 
@@ -442,5 +451,57 @@ public class BatchService {
         summary.put("batches", batches.stream().map(this::mapToResponse).collect(Collectors.toList()));
 
         return summary;
+    }
+
+    // --- FEFO Global Queries ---
+
+    public List<BatchResponse> getAllBatchesFEFO() {
+        List<Batch> batches = batchRepository.findAllActiveBatchesFEFO();
+        List<BatchResponse> responses = new java.util.ArrayList<>();
+        for (int i = 0; i < batches.size(); i++) {
+            responses.add(mapToResponseWithRank(batches.get(i), i + 1));
+        }
+        return responses;
+    }
+
+    public List<BatchResponse> getBatchesByExpiryCategory(String category) {
+        Batch.ExpiryCategory cat = Batch.ExpiryCategory.valueOf(category.toUpperCase());
+        return batchRepository.findAllActiveBatchesFEFO().stream()
+                .filter(b -> b.getExpiryCategory() == cat)
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public Map<String, Object> getDashboardStats() {
+        Map<String, Object> stats = new java.util.HashMap<>();
+        List<Batch> allActive = batchRepository.findAllActiveBatchesFEFO();
+        List<Batch> quarantined = batchRepository.findQuarantinedBatches();
+
+        long critical = allActive.stream().filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.CRITICAL).count();
+        long warning = allActive.stream().filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.WARNING).count();
+        long safe = allActive.stream().filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.SAFE).count();
+        long normal = allActive.stream().filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.NORMAL).count();
+
+        BigDecimal criticalValue = allActive.stream()
+                .filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.CRITICAL)
+                .map(b -> b.getMrp() != null ? b.getMrp().multiply(BigDecimal.valueOf(b.getCurrentStock())) : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal warningValue = allActive.stream()
+                .filter(b -> b.getExpiryCategory() == Batch.ExpiryCategory.WARNING)
+                .map(b -> b.getMrp() != null ? b.getMrp().multiply(BigDecimal.valueOf(b.getCurrentStock())) : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        stats.put("totalActiveBatches", allActive.size());
+        stats.put("quarantinedCount", quarantined.size());
+        stats.put("criticalCount", critical);
+        stats.put("warningCount", warning);
+        stats.put("safeCount", safe);
+        stats.put("normalCount", normal);
+        stats.put("criticalValue", criticalValue);
+        stats.put("warningValue", warningValue);
+        stats.put("expiringIn90Days", critical + warning + safe);
+
+        return stats;
     }
 }

@@ -84,6 +84,60 @@ export const fetchUsageReport = createAsyncThunk(
   }
 );
 
+export const fetchRevenueReport = createAsyncThunk(
+  'reports/fetchRevenue',
+  async ({ startDate, endDate }, { rejectWithValue }) => {
+    try {
+      const formattedStart = formatDateForBackend(startDate);
+      const formattedEnd = formatDateForBackend(endDate);
+      const response = await api.get(`/reports/revenue?startDate=${formattedStart}&endDate=${formattedEnd}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch revenue report');
+    }
+  }
+);
+
+export const fetchProfitLossReport = createAsyncThunk(
+  'reports/fetchProfitLoss',
+  async ({ startDate, endDate }, { rejectWithValue }) => {
+    try {
+      const formattedStart = formatDateForBackend(startDate);
+      const formattedEnd = formatDateForBackend(endDate);
+      const response = await api.get(`/reports/profit-loss?startDate=${formattedStart}&endDate=${formattedEnd}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch profit/loss report');
+    }
+  }
+);
+
+export const fetchExpiryLossReport = createAsyncThunk(
+  'reports/fetchExpiryLoss',
+  async ({ startDate, endDate }, { rejectWithValue }) => {
+    try {
+      const formattedStart = formatDateForBackend(startDate);
+      const formattedEnd = formatDateForBackend(endDate);
+      const response = await api.get(`/reports/expiry-loss?startDate=${formattedStart}&endDate=${formattedEnd}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch expiry loss report');
+    }
+  }
+);
+
+export const fetchInventoryValuation = createAsyncThunk(
+  'reports/fetchInventoryValuation',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/reports/inventory-valuation');
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch inventory valuation');
+    }
+  }
+);
+
 export const downloadReportPDF = createAsyncThunk(
   'reports/downloadPDF',
   async ({ type, startDate, endDate }, { rejectWithValue }) => {
@@ -133,6 +187,10 @@ const reportSlice = createSlice({
     stockReport: null,
     salesReport: null,
     usageReport: null,
+    revenueReport: null,
+    profitLossReport: null,
+    expiryLossReport: null,
+    inventoryValuation: null,
     loading: false,
     error: null,
     success: false,
@@ -148,6 +206,10 @@ const reportSlice = createSlice({
       state.stockReport = null;
       state.salesReport = null;
       state.usageReport = null;
+      state.revenueReport = null;
+      state.profitLossReport = null;
+      state.expiryLossReport = null;
+      state.inventoryValuation = null;
     },
   },
   extraReducers: (builder) => {
@@ -204,6 +266,19 @@ const reportSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      // Revenue report
+      .addCase(fetchRevenueReport.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRevenueReport.fulfilled, (state, action) => {
+        state.loading = false;
+        state.revenueReport = action.payload;
+      })
+      .addCase(fetchRevenueReport.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
       // Download PDF
       .addCase(downloadReportPDF.pending, (state) => {
         state.loading = true;
@@ -229,10 +304,48 @@ const reportSlice = createSlice({
       .addCase(downloadReportCSV.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      // Profit/Loss report
+      .addCase(fetchProfitLossReport.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProfitLossReport.fulfilled, (state, action) => {
+        state.loading = false;
+        state.profitLossReport = action.payload;
+      })
+      .addCase(fetchProfitLossReport.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Expiry Loss report
+      .addCase(fetchExpiryLossReport.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchExpiryLossReport.fulfilled, (state, action) => {
+        state.loading = false;
+        state.expiryLossReport = action.payload;
+      })
+      .addCase(fetchExpiryLossReport.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // Inventory Valuation
+      .addCase(fetchInventoryValuation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchInventoryValuation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.inventoryValuation = action.payload;
+      })
+      .addCase(fetchInventoryValuation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
 export const { clearError, clearSuccess, clearReports } = reportSlice.actions;
 export default reportSlice.reducer;
-

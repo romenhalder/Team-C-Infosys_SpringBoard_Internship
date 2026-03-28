@@ -48,4 +48,7 @@ public interface BatchRepository extends JpaRepository<Batch, Long> {
 
     @Query("SELECT COALESCE(SUM(b.currentStock - COALESCE(b.reservedStock, 0)), 0) FROM Batch b WHERE b.medication.id = :medicationId AND b.isQuarantined = false")
     Integer getTotalAvailableStock(@Param("medicationId") Long medicationId);
+
+    @Query("SELECT b FROM Batch b JOIN FETCH b.medication WHERE b.isQuarantined = false AND b.currentStock > 0 ORDER BY b.expiryDate ASC")
+    List<Batch> findAllActiveBatchesFEFO();
 }
