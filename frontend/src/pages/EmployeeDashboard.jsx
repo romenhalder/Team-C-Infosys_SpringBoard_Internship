@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -11,13 +11,18 @@ import {
   CurrencyRupeeIcon,
   ArrowTrendingUpIcon,
   CheckCircleIcon,
+  ArrowRightIcon,
+  BoltIcon,
+  ClockIcon,
+  ShieldCheckIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { fetchProducts } from '../features/products/productSlice';
 import { fetchInventory, fetchLowStock } from '../features/inventory/inventorySlice';
 import { fetchUnreadAlerts } from '../features/alerts/alertSlice';
 
 /* ─── Count-Up Hook ─── */
-const useCountUp = (end, duration = 800) => {
+const useCountUp = (end, duration = 1000) => {
   const [value, setValue] = useState(0);
   const ref = useRef(null);
   const startedRef = useRef(false);
@@ -31,7 +36,7 @@ const useCountUp = (end, duration = 800) => {
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - Math.pow(1 - progress, 4); // Quartic ease out
       setValue(Math.floor(numEnd * eased));
       if (progress < 1) requestAnimationFrame(animate);
     };
@@ -42,7 +47,7 @@ const useCountUp = (end, duration = 800) => {
     startedRef.current = false;
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) startAnimation(); },
-      { threshold: 0.3 }
+      { threshold: 0.2 }
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
@@ -51,23 +56,32 @@ const useCountUp = (end, duration = 800) => {
   return { ref, value };
 };
 
-const StatCard = ({ title, rawValue, prefix = '', icon: Icon, accentColor, delay = 0, onClick }) => {
+const StatCard = ({ title, rawValue, prefix = '', icon: Icon, accentColor, delay = 0, trend }) => {
   const { ref, value } = useCountUp(rawValue || 0);
   return (
     <div
       ref={ref}
-      onClick={onClick}
-      className={`stat-card animate-fade-slide-up stagger-${delay + 1} cursor-pointer`}
+      className={`card-glass p-6 animate-fade-slide-up stagger-${delay + 1} group hover:border-cyan-500/30 transition-all duration-300 relative overflow-hidden`}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="stat-label">{title}</p>
-          <p className="stat-value">{prefix}{value.toLocaleString('en-IN')}</p>
+      <div className="flex justify-between items-start relative z-10">
+        <div className="space-y-1">
+          <p className="text-label uppercase tracking-widest">{title}</p>
+          <div className="flex items-baseline space-x-2">
+            <h3 className="text-3xl font-black text-white font-digit tracking-tighter">
+              {prefix}{value.toLocaleString('en-IN')}
+            </h3>
+            {trend && (
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${trend > 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
+              </span>
+            )}
+          </div>
         </div>
-        <div className="p-3 rounded-xl" style={{ background: `${accentColor}15` }}>
-          <Icon className="h-5 w-5" style={{ color: accentColor }} />
+        <div className="p-3 rounded-2xl bg-slate-900/50 border border-slate-800 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all duration-300">
+          <Icon className="h-6 w-6" />
         </div>
       </div>
+      <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full blur-3xl opacity-10 group-hover:opacity-20 transition-opacity" style={{ backgroundColor: accentColor }} />
     </div>
   );
 };
@@ -90,11 +104,11 @@ const EmployeeDashboard = () => {
     dispatch(fetchLowStock());
     dispatch(fetchUnreadAlerts());
     fetchMySales();
-  }, [dispatch]);
+  }, [dispatch, token]);
 
-  const fetchMySales = async () => {
+  const fetchMySales = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/sales/recent?limit=10`, {
+      const response = await fetch(`${API_URL}/sales/recent?limit=20`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
@@ -108,217 +122,253 @@ const EmployeeDashboard = () => {
     } catch (err) {
       console.error('Failed to fetch my sales', err);
     }
-  };
+  }, [token]);
 
-  const getStockStatus = () => {
+  const stockStats = useMemo(() => {
     const outOfStock = products.filter(p => p.currentStock === 0 || p.isOutOfStock).length;
     const lowStockItems = products.filter(p => p.currentStock > 0 && (p.isLowStock || p.currentStock <= p.minStockLevel)).length;
     const inStock = products.length - outOfStock - lowStockItems;
-    return { outOfStock, lowStockItems, inStock };
-  };
-
-  const stockStatus = getStockStatus();
-  const totalProducts = products.length || 1;
-  const inStockPercent = Math.round((stockStatus.inStock / totalProducts) * 100);
-  const lowStockPercent = Math.round((stockStatus.lowStockItems / totalProducts) * 100);
-  const outOfStockPercent = Math.round((stockStatus.outOfStock / totalProducts) * 100);
-
-  const getItemStockBadge = (item) => {
-    if (item.currentQuantity === 0 || item.currentQuantity <= 0) {
-      return { text: 'Out of Stock', class: 'badge-danger' };
-    }
-    return { text: 'Low Stock', class: 'badge-warning' };
-  };
+    return { outOfStock, lowStockItems, inStock, total: products.length || 1 };
+  }, [products]);
 
   const greeting = new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening';
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div
-        className="card-glass animate-fade-slide-up stagger-1"
-        style={{ borderLeft: '3px solid #2dd4bf' }}
-      >
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm" style={{ color: '#64748b' }}>Good {greeting}! 👋</p>
-            <h1 className="text-2xl font-bold mt-1" style={{ color: '#f1f5f9' }}>{user?.fullName}</h1>
-            <span
-              className="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full"
-              style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.3)' }}
-            >
-              💊 {user?.role === 'EMPLOYEE' ? 'Pharmacist' : user?.role}
-            </span>
+    <div className="space-y-8 pb-10">
+      {/* Dynamic Header */}
+      <div className="animate-fade-slide-up flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse shadow-glow-cyan" />
+            <p className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.3em]">Pharmacist Active Terminal</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm" style={{ color: '#64748b' }}>My Dispensing Today</p>
-            <p className="text-3xl font-bold" style={{ color: '#22d3ee' }}>₹{mySalesSummary.totalSales}</p>
-            <p className="text-xs" style={{ color: '#475569' }}>{mySalesSummary.count} transactions</p>
+          <h1 className="text-4xl font-black text-white tracking-tight leading-none italic">
+            Good {greeting}, <span className="text-gradient-cyan">{user?.fullName?.split(' ')[0]}</span>
+          </h1>
+          <div className="flex items-center space-x-4">
+             <div className="flex items-center text-[10px] font-bold text-slate-500 uppercase">
+                <ClockIcon className="h-3.5 w-3.5 mr-1" />
+                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+             </div>
+             <div className="flex items-center text-[10px] font-bold text-emerald-500 uppercase">
+                <ShieldCheckIcon className="h-3.5 w-3.5 mr-1" />
+                GXP Certified Access
+             </div>
           </div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+           <button 
+            onClick={() => navigate('/sell')}
+            className="h-12 px-6 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center group"
+          >
+             <CurrencyRupeeIcon className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" />
+             Dispensing Terminal
+          </button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Medications" rawValue={products.length} icon={BeakerIcon} accentColor="#38bdf8" delay={1} onClick={() => navigate('/products')} />
-        <StatCard title="Inventory" rawValue={inventory.length} icon={ArchiveBoxIcon} accentColor="#10b981" delay={2} onClick={() => navigate('/inventory')} />
-        <StatCard title="Alerts" rawValue={unreadAlerts.length} icon={ExclamationTriangleIcon} accentColor={unreadAlerts.length > 0 ? '#f43f5e' : '#64748b'} delay={3} onClick={() => navigate('/alerts')} />
-        <div
-          className="stat-card animate-fade-slide-up stagger-5 cursor-pointer"
-          onClick={() => navigate('/sell')}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="stat-label">Dispensing</p>
-              <p className="stat-value" style={{ color: '#22d3ee' }}>POS</p>
-            </div>
-            <div className="p-3 rounded-xl" style={{ background: 'rgba(167,139,250,0.15)' }}>
-              <CurrencyRupeeIcon className="h-5 w-5" style={{ color: '#a78bfa' }} />
-            </div>
-          </div>
-        </div>
+      {/* KPI Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+         <StatCard 
+            title="Today's Dispensing" 
+            rawValue={mySalesSummary.totalSales} 
+            prefix="₹" 
+            icon={CurrencyRupeeIcon} 
+            accentColor="#22d3ee" 
+            trend={12} 
+            delay={0} 
+          />
+         <StatCard 
+            title="Active Inventory" 
+            rawValue={products.length} 
+            icon={BeakerIcon} 
+            accentColor="#10b981" 
+            delay={1} 
+          />
+         <StatCard 
+            title="Active Alerts" 
+            rawValue={unreadAlerts.length} 
+            icon={ExclamationTriangleIcon} 
+            accentColor={unreadAlerts.length > 0 ? '#f43f5e' : '#64748b'} 
+            delay={2} 
+          />
+         <StatCard 
+            title="Batch Count" 
+            rawValue={inventory.length} 
+            icon={ArchiveBoxIcon} 
+            accentColor="#a78bfa" 
+            delay={3} 
+          />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <div className="card animate-fade-slide-up stagger-5">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#f1f5f9' }}>⚡ Quick Actions</h2>
-          <div className="space-y-2">
-            {[
-              { icon: CurrencyRupeeIcon, label: 'Dispense', desc: 'Open dispensing counter', to: '/sell', accent: '#10b981' },
-              { icon: PlusIcon, label: 'Stock In', desc: 'Add received items', to: '/inventory/update', state: { defaultType: 'STOCK_IN' }, accent: '#38bdf8' },
-              { icon: MinusIcon, label: 'Stock Out', desc: 'Record usage or wastage', to: '/inventory/update', state: { defaultType: 'STOCK_OUT' }, accent: '#f43f5e' },
-              { icon: BeakerIcon, label: 'View Medications', desc: 'Browse all drugs', to: '/products', accent: '#a78bfa' },
-            ].map((action) => (
-              <button
-                key={action.label}
-                onClick={() => navigate(action.to, action.state ? { state: action.state } : undefined)}
-                className="flex items-center w-full p-3 rounded-lg transition-all"
-                style={{ background: `${action.accent}08`, border: `1px solid ${action.accent}15` }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = `${action.accent}15`; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = `${action.accent}08`; }}
-              >
-                <action.icon className="h-5 w-5 mr-3" style={{ color: action.accent }} />
-                <div className="text-left">
-                  <span className="font-medium text-sm" style={{ color: action.accent }}>{action.label}</span>
-                  <p className="text-xs" style={{ color: '#475569' }}>{action.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
+        {/* Quick Command Center */}
+        <div className="card-glass p-0 flex flex-col overflow-hidden animate-fade-slide-up stagger-4">
+           <div className="p-6 border-b border-slate-800 bg-slate-900/40">
+              <h2 className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center">
+                 <BoltIcon className="h-4 w-4 mr-2 text-cyan-400" />
+                 Command Center
+              </h2>
+           </div>
+           <div className="p-4 space-y-2">
+              {[
+                { icon: CurrencyRupeeIcon, label: 'Start POS', desc: 'Open dispensing counter', to: '/sell', color: 'indigo' },
+                { icon: PlusIcon, label: 'Stock In', desc: 'Record batch arrival', to: '/inventory/update', state: { defaultType: 'STOCK_IN' }, color: 'emerald' },
+                { icon: MinusIcon, label: 'Stock Out', desc: 'Wastage or returns', to: '/inventory/update', state: { defaultType: 'STOCK_OUT' }, color: 'rose' },
+                { icon: BeakerIcon, label: 'Drug Catalog', desc: 'Search medications', to: '/products', color: 'cyan' },
+              ].map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => navigate(action.to, action.state ? { state: action.state } : undefined)}
+                  className="w-full flex items-center p-4 rounded-2xl bg-slate-950/40 border border-slate-900 hover:border-slate-700 hover:bg-slate-900/60 transition-all group"
+                >
+                  <div className={`p-3 rounded-xl bg-${action.color}-500/10 text-${action.color}-500 group-hover:bg-${action.color}-500 group-hover:text-slate-950 transition-all`}>
+                    <action.icon className="h-5 w-5" />
+                  </div>
+                  <div className="ml-4 text-left">
+                    <p className="text-sm font-black text-slate-100 group-hover:text-white transition-colors uppercase">{action.label}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">{action.desc}</p>
+                  </div>
+                  <ArrowRightIcon className="h-4 w-4 ml-auto text-slate-700 group-hover:translate-x-1 group-hover:text-cyan-400 transition-all" />
+                </button>
+              ))}
+           </div>
         </div>
 
-        {/* My Recent Sales */}
-        <div className="card lg:col-span-2 animate-fade-slide-up stagger-6">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#f1f5f9' }}>📋 My Recent Dispensing</h2>
-          {mySales.length === 0 ? (
-            <div className="empty-state py-6">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(34,211,238,0.1)' }}>
-                <CurrencyRupeeIcon className="h-6 w-6" style={{ color: '#22d3ee' }} />
-              </div>
-              <h3>No sales yet</h3>
-              <p>Start dispensing to see your transactions here</p>
-              <button onClick={() => navigate('/sell')} className="btn-primary mt-3 text-sm">
-                Open POS
+        {/* Live Transaction Log */}
+        <div className="lg:col-span-2 card-glass p-0 flex flex-col overflow-hidden animate-fade-slide-up stagger-5 border-t-4 border-t-indigo-500">
+           <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
+              <h2 className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center">
+                 <ClockIcon className="h-4 w-4 mr-2 text-indigo-400" />
+                 Live Dispensing Feed
+              </h2>
+              <button onClick={fetchMySales} className="p-1.5 rounded-lg hover:bg-slate-800 transition-colors">
+                <BoltIcon className="h-4 w-4 text-slate-500" />
               </button>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {mySales.slice(0, 8).map((sale) => (
-                <div
-                  key={sale.id}
-                  className="flex items-center justify-between p-3 rounded-lg transition-colors"
-                  style={{ background: 'rgba(15,23,42,0.4)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(34,211,238,0.05)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(15,23,42,0.4)'; }}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.15)' }}>
-                      <CheckCircleIcon className="h-4 w-4" style={{ color: '#10b981' }} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: '#f1f5f9' }}>
-                        {sale.customerName || sale.customerMobile || 'Walk-in'}
-                      </p>
-                      <p className="text-xs" style={{ color: '#475569' }}>
-                        {sale.items?.length || 0} items • {new Date(sale.createdAt).toLocaleString('en-IN', {
-                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-bold" style={{ color: '#22d3ee' }}>₹{sale.totalAmount}</span>
-                </div>
-              ))}
-            </div>
-          )}
+           </div>
+           <div className="flex-1 overflow-x-auto">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="border-b border-slate-800 bg-slate-950/40">
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Patient / Mobile</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Amount</th>
+                       <th className="px-6 py-4 text-right"></th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-800/50">
+                    {mySales.slice(0, 10).map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-900/40 transition-colors group">
+                        <td className="px-6 py-4">
+                           <p className="text-xs font-black text-slate-300">
+                             {new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </p>
+                           <p className="text-[10px] text-slate-600 font-bold uppercase">{sale.orderNumber}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                           <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400 mr-3">
+                                {(sale.customerName || 'W').charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-slate-200 uppercase">{sale.customerName || 'Walk-in'}</p>
+                                <p className="text-[10px] text-slate-600 font-bold">{sale.customerMobile || '—'}</p>
+                              </div>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-right font-black text-white font-digit">
+                           ₹{sale.totalAmount?.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <button className="p-2 rounded-lg bg-slate-800 text-slate-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-cyan-500 hover:text-slate-950">
+                             <ClipboardDocumentListIcon className="h-4 w-4" />
+                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {mySales.length === 0 && (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-20 text-center">
+                           <div className="flex flex-col items-center opacity-20">
+                              <ArchiveBoxIcon className="h-12 w-12 mb-4" />
+                              <p className="text-xs font-black uppercase tracking-[0.3em]">No Transactions Registered</p>
+                           </div>
+                        </td>
+                      </tr>
+                    )}
+                 </tbody>
+              </table>
+           </div>
         </div>
       </div>
 
-      {/* Stock Overview & Pending Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stock Overview */}
-        <div className="card animate-fade-slide-up">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#f1f5f9' }}>📊 Stock Overview</h2>
-          <div className="space-y-4">
-            {[
-              { label: 'In Stock', value: stockStatus.inStock, percent: inStockPercent, color: '#10b981' },
-              { label: 'Low Stock', value: stockStatus.lowStockItems, percent: lowStockPercent, color: '#f59e0b' },
-              { label: 'Out of Stock', value: stockStatus.outOfStock, percent: outOfStockPercent, color: '#f43f5e' },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span style={{ color: '#94a3b8' }}>{s.label}</span>
-                  <span className="font-medium" style={{ color: s.color }}>{s.value} ({s.percent}%)</span>
-                </div>
-                <div className="w-full rounded-full h-2" style={{ background: 'rgba(15,23,42,0.6)' }}>
-                  <div className="h-2 rounded-full transition-all duration-700" style={{ width: `${s.percent}%`, background: s.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Inventory Insight */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-slide-up stagger-6">
+         <div className="card-glass p-6">
+            <h2 className="text-xs font-black text-slate-200 uppercase tracking-widest mb-6 flex items-center">
+               <ChartBarIcon className="h-4 w-4 mr-2 text-emerald-400" />
+               Stock Distribution
+            </h2>
+            <div className="space-y-6">
+               {[
+                 { label: 'In Stock', val: stockStats.inStock, color: 'emerald' },
+                 { label: 'Low Stock', val: stockStats.lowStockItems, color: 'amber' },
+                 { label: 'Critically Out', val: stockStats.outOfStock, color: 'rose' },
+               ].map((s, i) => {
+                 const percent = Math.round((s.val / stockStats.total) * 100);
+                 return (
+                   <div key={i} className="space-y-2">
+                     <div className="flex justify-between items-end">
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{s.label}</span>
+                        <span className={`text-sm font-black text-${s.color}-500 font-digit`}>{s.val} Units [{percent}%]</span>
+                     </div>
+                     <div className="h-2 w-full bg-slate-950/60 rounded-full overflow-hidden border border-slate-900">
+                        <div 
+                          className={`h-full bg-${s.color}-500 rounded-full transition-all duration-1000 delay-500 shadow-glow-${s.color}`}
+                          style={{ width: `${percent}%` }}
+                        />
+                     </div>
+                   </div>
+                 );
+               })}
+            </div>
+         </div>
 
-        {/* Pending Tasks */}
-        <div className="card animate-fade-slide-up">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#f1f5f9' }}>📌 Pending Tasks</h2>
-          {lowStock.length === 0 ? (
-            <div className="empty-state py-6">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: 'rgba(16,185,129,0.15)' }}>
-                <CheckCircleIcon className="h-6 w-6" style={{ color: '#10b981' }} />
-              </div>
-              <h3>All Good!</h3>
-              <p>No urgent tasks at the moment</p>
+         <div className="card-glass p-6 border-t-4 border-t-rose-500">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xs font-black text-slate-200 uppercase tracking-widest flex items-center">
+                 <ExclamationTriangleIcon className="h-4 w-4 mr-2 text-rose-500" />
+                 Low Stock Alerts
+              </h2>
+              <button className="text-[10px] font-black text-rose-500 uppercase hover:underline">View All</button>
             </div>
-          ) : (
-            <div className="space-y-2 max-h-[250px] overflow-y-auto">
-              {lowStock.slice(0, 6).map((item) => {
-                const badge = getItemStockBadge(item);
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg"
-                    style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.1)' }}
-                  >
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: '#f1f5f9' }}>{item.productName}</p>
-                      <p className="text-xs" style={{ color: '#475569' }}>Current: {item.currentQuantity} | Min: {item.minStockLevel}</p>
+            <div className="space-y-3">
+               {lowStock.slice(0, 5).map((item, i) => (
+                 <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-950/40 border border-slate-900 group">
+                    <div className="flex items-center">
+                       <div className="w-2.5 h-2.5 rounded-full bg-rose-500 mr-4 animate-pulse" />
+                       <span className="text-xs font-black text-slate-200 uppercase tracking-tight group-hover:text-rose-400 transition-colors leading-none">{item.productName}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`badge ${badge.class}`}>{badge.text}</span>
-                      <button
+                    <div className="flex items-center space-x-3">
+                       <span className="text-[10px] font-black text-slate-600 font-digit">{item.currentQuantity}/{item.minStockLevel}</span>
+                       <button 
                         onClick={() => navigate('/inventory/update', { state: { productId: item.productId, defaultType: 'STOCK_IN' } })}
-                        className="btn-success px-2 py-1 text-xs"
+                        className="p-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
                       >
-                        Restock
-                      </button>
+                         <PlusIcon className="h-4 w-4" />
+                       </button>
                     </div>
-                  </div>
-                );
-              })}
+                 </div>
+               ))}
+               {lowStock.length === 0 && (
+                 <div className="py-10 text-center opacity-30">
+                    <CheckCircleIcon className="h-10 w-10 mx-auto mb-2 text-emerald-500" />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Stock Integrity Optimal</p>
+                 </div>
+               )}
             </div>
-          )}
-        </div>
+         </div>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ package com.romen.inventory.dto;
 
 import com.romen.inventory.entity.StockTransaction;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -34,11 +36,27 @@ public class StockUpdateRequest {
 
     private String referenceNumber;
 
-    private String batchNumber;
-
-    private LocalDateTime expiryDate;
-
     private Long supplierId;
 
     private String notes;
+
+    // Batch management fields for proper stock-batch synchronization
+    private Long batchId;
+
+    private Boolean createNewBatch;
+
+    @NotBlank(message = "Batch number is required for stock operations")
+    private String batchNumber;
+
+    private LocalDate manufacturerDate;
+
+    private LocalDate expiryDate;
+
+    private BigDecimal mrp;
+
+    private BigDecimal ptr;
+
+    private BigDecimal pts;
+
+    private String locationInStore;
 }

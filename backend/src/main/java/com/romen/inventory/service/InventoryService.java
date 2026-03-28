@@ -5,12 +5,15 @@ import com.romen.inventory.dto.InventoryResponse;
 import com.romen.inventory.dto.StockTransactionResponse;
 import com.romen.inventory.dto.StockUpdateRequest;
 import com.romen.inventory.entity.Alert;
+import com.romen.inventory.entity.Batch;
 import com.romen.inventory.entity.Inventory;
 import com.romen.inventory.entity.Medication;
 import com.romen.inventory.entity.StockTransaction;
+import com.romen.inventory.entity.Supplier;
 import com.romen.inventory.entity.User;
 import com.romen.inventory.exception.ResourceNotFoundException;
 import com.romen.inventory.repository.AlertRepository;
+import com.romen.inventory.repository.BatchRepository;
 import com.romen.inventory.repository.InventoryRepository;
 import com.romen.inventory.repository.MedicationRepository;
 import com.romen.inventory.repository.StockTransactionRepository;
@@ -21,7 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +37,7 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final MedicationRepository medicationRepository;
     private final StockTransactionRepository transactionRepository;
+    private final BatchRepository batchRepository;
     private final AlertRepository alertRepository;
     private final SupplierRepository supplierRepository;
 
@@ -71,69 +77,263 @@ public class InventoryService {
                 .orElse(Inventory.builder()
                         .medication(medication)
                         .currentQuantity(0)
+                        .availableQuantity(0)
+                        .isOutOfStock(true)
+                        .isLowStock(false)
                         .build());
 
+        Supplier supplier = request.getSupplierId() != null
+                ? supplierRepository.findById(request.getSupplierId()).orElse(null)
+                : null;
+
         Integer previousQuantity = inventory.getCurrentQuantity();
-        Integer newQuantity;
+        Integer transactionQuantity = 0;
+        List<Batch> affectedBatches = new ArrayList<>();
 
         switch (request.getType()) {
             case STOCK_IN:
-                newQuantity = previousQuantity + request.getQuantity();
-                inventory.setLastStockIn(LocalDateTime.now());
+                transactionQuantity = handleStockIn(request, medication, inventory, supplier);
                 break;
             case STOCK_OUT:
-                newQuantity = previousQuantity - request.getQuantity();
-                if (newQuantity < 0) {
-                    throw new IllegalArgumentException("Insufficient stock. Available: " + previousQuantity);
-                }
-                inventory.setLastStockOut(LocalDateTime.now());
-                break;
-            case ADJUSTMENT:
-                newQuantity = request.getQuantity();
+                transactionQuantity = handleStockOut(request, medication, inventory, affectedBatches);
                 break;
             case RETURN:
-                newQuantity = previousQuantity - request.getQuantity();
-                if (newQuantity < 0) {
-                    throw new IllegalArgumentException("Insufficient stock for return");
-                }
+                transactionQuantity = handleReturn(request, medication, inventory, affectedBatches);
                 break;
             case WASTAGE:
-                newQuantity = previousQuantity - request.getQuantity();
-                if (newQuantity < 0) {
-                    throw new IllegalArgumentException("Insufficient stock to record wastage");
-                }
+                transactionQuantity = handleWastage(request, medication, inventory, affectedBatches);
+                break;
+            case ADJUSTMENT:
+                handleAdjustment(request, medication, inventory);
+                transactionQuantity = request.getQuantity();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid transaction type");
+                throw new IllegalArgumentException("Invalid transaction type: " + request.getType());
         }
 
-        inventory.setCurrentQuantity(newQuantity);
-        inventory = inventoryRepository.save(inventory);
+        recalculateInventoryFromBatches(medication.getId(), inventory);
 
         StockTransaction transaction = StockTransaction.builder()
                 .medication(medication)
                 .transactionType(request.getType())
-                .quantity(request.getType() == StockTransaction.TransactionType.STOCK_IN ? request.getQuantity()
-                        : -request.getQuantity())
+                .quantity(transactionQuantity)
                 .previousQuantity(previousQuantity)
-                .newQuantity(newQuantity)
+                .newQuantity(inventory.getCurrentQuantity())
                 .unitPrice(request.getUnitPrice())
                 .reason(request.getReason())
                 .referenceNumber(request.getReferenceNumber())
                 .batchNumber(request.getBatchNumber())
-                .expiryDate(request.getExpiryDate())
                 .user(user)
-                .supplier(request.getSupplierId() != null
-                        ? supplierRepository.findById(request.getSupplierId()).orElse(null)
-                        : null)
+                .supplier(supplier)
                 .notes(request.getNotes())
                 .build();
-
         transactionRepository.save(transaction);
 
-        checkAndCreateAlerts(medication, inventory, previousQuantity, newQuantity);
+        checkAndCreateAlerts(medication, inventory, previousQuantity, inventory.getCurrentQuantity());
 
         return mapToInventoryResponse(inventory);
+    }
+
+    private int handleStockIn(StockUpdateRequest request, Medication medication, Inventory inventory, Supplier supplier) {
+        int qty = request.getQuantity();
+
+        Batch batch;
+        if (Boolean.TRUE.equals(request.getCreateNewBatch()) || request.getBatchId() == null) {
+            batch = Batch.builder()
+                    .medication(medication)
+                    .batchNumber(request.getBatchNumber())
+                    .manufacturerDate(request.getManufacturerDate())
+                    .expiryDate(request.getExpiryDate())
+                    .mrp(request.getMrp())
+                    .ptr(request.getPtr())
+                    .pts(request.getPts())
+                    .currentStock(qty)
+                    .locationInStore(request.getLocationInStore())
+                    .supplier(supplier)
+                    .isQuarantined(false)
+                    .build();
+        } else {
+            batch = batchRepository.findById(request.getBatchId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + request.getBatchId()));
+            batch.setCurrentStock(batch.getCurrentStock() + qty);
+        }
+
+        batch = batchRepository.save(batch);
+        inventory.setLastStockIn(LocalDateTime.now());
+        log.info("STOCK_IN: Added {} units to batch {} for medication {}",
+                qty, batch.getBatchNumber(), medication.getName());
+
+        return qty;
+    }
+
+    private int handleStockOut(StockUpdateRequest request, Medication medication, Inventory inventory,
+                              List<Batch> affectedBatches) {
+        int qtyToDeduct = request.getQuantity();
+        int totalAvailable = batchRepository.getTotalAvailableStock(medication.getId());
+
+        if (totalAvailable < qtyToDeduct) {
+            throw new IllegalArgumentException(
+                    String.format("Insufficient stock for %s. Available: %d, Requested: %d",
+                            medication.getName(), totalAvailable, qtyToDeduct));
+        }
+
+        List<Batch> batches = batchRepository.findActiveBatchesFEFO(medication.getId());
+        int remaining = qtyToDeduct;
+
+        for (Batch batch : batches) {
+            if (remaining <= 0) break;
+
+            int available = batch.getCurrentStock() - (batch.getReservedStock() != null ? batch.getReservedStock() : 0);
+            int toDeduct = Math.min(remaining, available);
+
+            if (toDeduct > 0) {
+                batch.setCurrentStock(batch.getCurrentStock() - toDeduct);
+                batchRepository.save(batch);
+                affectedBatches.add(batch);
+                remaining -= toDeduct;
+
+                log.info("STOCK_OUT: Deducted {} from batch {} (exp: {}) for medication {}",
+                        toDeduct, batch.getBatchNumber(), batch.getExpiryDate(), medication.getName());
+            }
+        }
+
+        inventory.setLastStockOut(LocalDateTime.now());
+        return qtyToDeduct;
+    }
+
+    private int handleReturn(StockUpdateRequest request, Medication medication, Inventory inventory,
+                            List<Batch> affectedBatches) {
+        int qtyToReturn = request.getQuantity();
+
+        Batch batch;
+        if (request.getBatchId() != null) {
+            batch = batchRepository.findById(request.getBatchId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Batch not found: " + request.getBatchId()));
+        } else {
+            List<Batch> batches = batchRepository.findActiveBatchesFEFO(medication.getId());
+            if (batches.isEmpty()) {
+                throw new IllegalArgumentException("No active batches found for return: " + medication.getName());
+            }
+            batch = batches.get(0);
+        }
+
+        batch.setCurrentStock(batch.getCurrentStock() + qtyToReturn);
+        batchRepository.save(batch);
+        affectedBatches.add(batch);
+
+        log.info("RETURN: Added {} units to batch {} for medication {}",
+                qtyToReturn, batch.getBatchNumber(), medication.getName());
+
+        return -qtyToReturn;
+    }
+
+    private int handleWastage(StockUpdateRequest request, Medication medication, Inventory inventory,
+                             List<Batch> affectedBatches) {
+        int qtyToWastage = request.getQuantity();
+        List<Batch> batches = batchRepository.findActiveBatchesFEFO(medication.getId());
+
+        if (batches.isEmpty()) {
+            throw new IllegalArgumentException("No active batches found for wastage: " + medication.getName());
+        }
+
+        int remaining = qtyToWastage;
+        for (Batch batch : batches) {
+            if (remaining <= 0) break;
+
+            int available = batch.getCurrentStock();
+            int toWastage = Math.min(remaining, available);
+
+            if (toWastage > 0) {
+                batch.setCurrentStock(batch.getCurrentStock() - toWastage);
+                batchRepository.save(batch);
+                affectedBatches.add(batch);
+                remaining -= toWastage;
+            }
+        }
+
+        log.info("WASTAGE: Recorded {} units wastage for medication {}",
+                qtyToWastage, medication.getName());
+
+        return -qtyToWastage;
+    }
+
+    private void handleAdjustment(StockUpdateRequest request, Medication medication, Inventory inventory) {
+        log.info("ADJUSTMENT: Setting stock to {} for medication {}",
+                request.getQuantity(), medication.getName());
+    }
+
+    private void recalculateInventoryFromBatches(Long medicationId, Inventory inventory) {
+        Integer totalStock = batchRepository.getTotalActiveStock(medicationId);
+        Integer availableStock = batchRepository.getTotalAvailableStock(medicationId);
+
+        if (totalStock == null) totalStock = 0;
+        if (availableStock == null) availableStock = 0;
+
+        inventory.setCurrentQuantity(totalStock);
+        inventory.setAvailableQuantity(availableStock);
+        inventory.setIsOutOfStock(totalStock <= 0);
+
+        if (inventory.getMedication() != null && inventory.getMedication().getMinStockLevel() != null) {
+            inventory.setIsLowStock(totalStock > 0 && totalStock <= inventory.getMedication().getMinStockLevel());
+        }
+
+        inventoryRepository.save(inventory);
+    }
+
+    @Transactional
+    public Map<String, Object> reconcileInventory(Long medicationId) {
+        Medication medication = medicationRepository.findById(medicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Medication not found: " + medicationId));
+
+        Inventory inventory = inventoryRepository.findByMedicationId(medicationId)
+                .orElse(Inventory.builder()
+                        .medication(medication)
+                        .currentQuantity(0)
+                        .availableQuantity(0)
+                        .build());
+
+        Integer totalBatchStock = batchRepository.getTotalActiveStock(medicationId);
+        Integer totalAvailable = batchRepository.getTotalAvailableStock(medicationId);
+
+        if (totalBatchStock == null) totalBatchStock = 0;
+        if (totalAvailable == null) totalAvailable = 0;
+
+        Integer previousQuantity = inventory.getCurrentQuantity();
+
+        inventory.setCurrentQuantity(totalBatchStock);
+        inventory.setAvailableQuantity(totalAvailable);
+        inventory.setIsOutOfStock(totalBatchStock <= 0);
+        if (medication.getMinStockLevel() != null) {
+            inventory.setIsLowStock(totalBatchStock > 0 && totalBatchStock <= medication.getMinStockLevel());
+        }
+        inventoryRepository.save(inventory);
+
+        List<Batch> batches = batchRepository.findByMedicationId(medicationId);
+        List<Map<String, Object>> batchSummary = batches.stream()
+                .map(b -> {
+                    Map<String, Object> m = new java.util.HashMap<>();
+                    m.put("batchNumber", b.getBatchNumber());
+                    m.put("currentStock", b.getCurrentStock());
+                    m.put("availableStock", b.getAvailableStock());
+                    m.put("isQuarantined", b.getIsQuarantined());
+                    m.put("expiryDate", b.getExpiryDate());
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("medicationId", medicationId);
+        result.put("medicationName", medication.getName());
+        result.put("previousQuantity", previousQuantity);
+        result.put("newQuantity", totalBatchStock);
+        result.put("adjustment", totalBatchStock - previousQuantity);
+        result.put("batches", batchSummary);
+        result.put("syncedAt", LocalDateTime.now());
+
+        log.info("RECONCILE: {} - {} (prev: {}, new: {}, diff: {})",
+                medication.getName(), previousQuantity, totalBatchStock, totalBatchStock - previousQuantity);
+
+        return result;
     }
 
     @Transactional
