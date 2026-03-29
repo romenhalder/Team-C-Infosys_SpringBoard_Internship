@@ -725,12 +725,190 @@ const Reports = () => {
     doc.save(`usage-report-${usageReport.startDate}-to-${usageReport.endDate}.pdf`);
   };
 
+  const downloadRevenuePdf = () => {
+    if (!revenueReport) return;
+    const doc = new jsPDF();
+    const pw = doc.internal.pageSize.width;
+    let y = 20;
+
+    // Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pw, 35, 'F');
+    doc.setTextColor(255); doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+    doc.text('PHARMATRACK PRO', 14, 15);
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+    doc.text('Company Revenue Report', 14, 24);
+    doc.setFontSize(9);
+    doc.text('Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pw - 14, 15, { align: 'right' });
+    doc.setTextColor(0); y = 50;
+
+    // Summary
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(6, 182, 212);
+    doc.text('Revenue Summary', 14, y); y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Gross Revenue', 'Net Revenue', 'Total Orders', 'Avg Order Value']],
+      body: [[
+        formatCurrency(revenueReport.grossRevenue),
+        formatCurrency(revenueReport.netRevenue),
+        String(revenueReport.totalOrders || 0),
+        formatCurrency(revenueReport.averageOrderValue),
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [6, 182, 212], textColor: [15, 23, 42], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { fontSize: 10, halign: 'center' },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 12;
+
+    // P&L Waterfall
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 69, 19);
+    doc.text('Profit & Loss Statement', 14, y); y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Line Item', 'Amount']],
+      body: [
+        ['Gross Revenue', formatCurrency(revenueReport.grossRevenue)],
+        ['Less: CGST', '- ' + formatCurrency(revenueReport.totalCgst)],
+        ['Less: SGST', '- ' + formatCurrency(revenueReport.totalSgst)],
+        ['Less: Discounts', '- ' + formatCurrency(revenueReport.totalDiscount)],
+        ['Net Revenue', formatCurrency(revenueReport.netRevenue)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [34, 139, 34], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { fontSize: 10 },
+      columnStyles: { 1: { halign: 'right' } },
+      margin: { left: 14, right: 14 },
+      didParseCell: function(data) {
+        if (data.section === 'body' && data.row.index === 4) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [240, 253, 244];
+        }
+      },
+    });
+    y = doc.lastAutoTable.finalY + 12;
+
+    // Payment Breakdown
+    if (revenueReport.revenueByPaymentMethod && Object.keys(revenueReport.revenueByPaymentMethod).length > 0) {
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 69, 19);
+      doc.text('Revenue by Payment Method', 14, y); y += 8;
+      autoTable(doc, {
+        startY: y,
+        head: [['Payment Method', 'Revenue']],
+        body: Object.entries(revenueReport.revenueByPaymentMethod).map(([m, a]) => [m, formatCurrency(a)]),
+        theme: 'striped',
+        headStyles: { fillColor: [70, 130, 180], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: { 1: { halign: 'right' } },
+        margin: { left: 14, right: 14 },
+      });
+      y = doc.lastAutoTable.finalY + 12;
+    }
+
+    // Category Breakdown
+    if (revenueReport.revenueByCategory && Object.keys(revenueReport.revenueByCategory).length > 0) {
+      if (y > 230) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 69, 19);
+      doc.text('Revenue by Category', 14, y); y += 8;
+      const catEntries = Object.entries(revenueReport.revenueByCategory);
+      const catTotal = catEntries.reduce((s, [, v]) => s + Number(v), 0) || 1;
+      autoTable(doc, {
+        startY: y,
+        head: [['Category', 'Revenue', '% Share']],
+        body: catEntries.map(([c, a]) => [c, formatCurrency(a), ((Number(a) / catTotal) * 100).toFixed(1) + '%']),
+        theme: 'striped',
+        headStyles: { fillColor: [218, 165, 32], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'center' } },
+        margin: { left: 14, right: 14 },
+      });
+    }
+
+    addProfessionalFooter(doc);
+    doc.save(`revenue-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const downloadProfitLossPdf = () => {
+    if (!profitLossReport) return;
+    const doc = new jsPDF();
+    const pw = doc.internal.pageSize.width;
+    let y = 20;
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pw, 35, 'F');
+    doc.setTextColor(255); doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+    doc.text('PHARMATRACK PRO', 14, 15);
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+    doc.text('Profit & Loss Report', 14, 24);
+    doc.setFontSize(9);
+    doc.text('Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), pw - 14, 15, { align: 'right' });
+    doc.setTextColor(0); y = 50;
+
+    // P&L Summary
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(6, 182, 212);
+    doc.text('P&L Summary', 14, y); y += 8;
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Total Revenue', 'Total Cost', 'Net Profit', 'Margin']],
+      body: [[
+        formatCurrency(profitLossReport.totalRevenue),
+        formatCurrency(profitLossReport.totalCost),
+        formatCurrency(profitLossReport.totalProfit),
+        profitLossReport.profitMargin + '%',
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [6, 182, 212], textColor: [15, 23, 42], fontStyle: 'bold', halign: 'center' },
+      bodyStyles: { fontSize: 11, halign: 'center' },
+      margin: { left: 14, right: 14 },
+      didParseCell: function(data) {
+        if (data.section === 'body' && data.column.index === 2) {
+          data.cell.styles.textColor = Number(profitLossReport.totalProfit) >= 0 ? [22, 163, 74] : [220, 38, 38];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+    y = doc.lastAutoTable.finalY + 12;
+
+    // Category Breakdown
+    if (profitLossReport.categoryBreakdown?.length > 0) {
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(139, 69, 19);
+      doc.text('Profit by Category', 14, y); y += 8;
+      autoTable(doc, {
+        startY: y,
+        head: [['Category', 'Revenue', 'Cost', 'Profit']],
+        body: profitLossReport.categoryBreakdown.map(c => [
+          c.category, formatCurrency(c.revenue), formatCurrency(c.cost), formatCurrency(c.profit)
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [139, 69, 19], textColor: [255, 255, 255], fontStyle: 'bold' },
+        bodyStyles: { fontSize: 10 },
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+        margin: { left: 14, right: 14 },
+        didParseCell: function(data) {
+          if (data.column.index === 3 && data.section === 'body') {
+            const val = Number(String(data.cell.raw).replace(/[^0-9.-]/g, ''));
+            data.cell.styles.textColor = val >= 0 ? [22, 163, 74] : [220, 38, 38];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        },
+      });
+    }
+
+    addProfessionalFooter(doc);
+    doc.save(`profit-loss-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   const handleDownloadPDF = () => {
     switch (activeTab) {
       case 'analytics': downloadAnalyticsPdf(); break;
       case 'stock': downloadStockPdf(); break;
       case 'sales': downloadSalesPdf(); break;
       case 'usage': downloadUsagePdf(); break;
+      case 'revenue': downloadRevenuePdf(); break;
+      case 'profit-loss': downloadProfitLossPdf(); break;
       default: break;
     }
   };
@@ -1209,63 +1387,149 @@ const Reports = () => {
       {/* REVENUE REPORT TAB */}
       {/* =================== */}
       {activeTab === 'revenue' && revenueReport && (
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="space-y-6">
+          {/* Hero P&L Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Gross Revenue', value: formatCurrency(revenueReport.grossRevenue), bg: 'bg-sky-500/10', text: 'text-sky-300' },
-              { label: 'Net Revenue', value: formatCurrency(revenueReport.netRevenue), bg: 'bg-emerald-500/10', text: 'text-emerald-300' },
-              { label: 'Total Orders', value: revenueReport.totalOrders, bg: 'bg-purple-500/10', text: 'text-purple-300' },
-              { label: 'Avg Order Value', value: formatCurrency(revenueReport.averageOrderValue), bg: 'bg-amber-500/10', text: 'text-amber-300' },
-            ].map((s) => (
-              <div key={s.label} className={`${s.bg} rounded-xl p-4`}>
-                <p className="text-xs font-medium text-slate-500 mb-2">{s.label}</p>
-                <p className={`text-2xl font-bold ${s.text}`}>{s.value}</p>
-              </div>
-            ))}
+              { label: 'Gross Revenue', value: formatCurrency(revenueReport.grossRevenue), icon: CurrencyRupeeIcon, color: 'from-cyan-500 to-blue-500', shadow: 'shadow-cyan-500/20' },
+              { label: 'Net Revenue', value: formatCurrency(revenueReport.netRevenue), icon: ArrowTrendingUpIcon, color: 'from-emerald-500 to-green-500', shadow: 'shadow-emerald-500/20' },
+              { label: 'Total Orders', value: String(revenueReport.totalOrders || 0), icon: ShoppingBagIcon, color: 'from-violet-500 to-purple-500', shadow: 'shadow-violet-500/20' },
+              { label: 'Avg Order Value', value: formatCurrency(revenueReport.averageOrderValue), icon: ChartBarIcon, color: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-500/20' },
+            ].map((kpi) => {
+              const Icon = kpi.icon;
+              return (
+                <div key={kpi.label} className={`bg-gradient-to-br ${kpi.color} rounded-2xl p-5 text-white shadow-lg ${kpi.shadow}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-white/70 uppercase tracking-wider">{kpi.label}</p>
+                      <p className="text-2xl font-black mt-1">{kpi.value}</p>
+                    </div>
+                    <div className="bg-white/10 p-3 rounded-xl">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
+          {/* Revenue Waterfall — P&L Statement */}
+          <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
+            <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <CurrencyRupeeIcon className="h-5 w-5 text-cyan-400" />
+              Company Revenue Statement
+            </h3>
+            <div className="space-y-3">
+              {[
+                { label: 'Gross Revenue (Total Sales)', value: formatCurrency(revenueReport.grossRevenue), color: 'text-cyan-400', bar: 'bg-cyan-500', pct: 100 },
+                { label: 'Less: CGST Collected', value: `- ${formatCurrency(revenueReport.totalCgst)}`, color: 'text-amber-400', bar: 'bg-amber-500', pct: Number(revenueReport.totalCgst || 0) / Math.max(Number(revenueReport.grossRevenue || 1), 1) * 100 },
+                { label: 'Less: SGST Collected', value: `- ${formatCurrency(revenueReport.totalSgst)}`, color: 'text-amber-400', bar: 'bg-amber-500', pct: Number(revenueReport.totalSgst || 0) / Math.max(Number(revenueReport.grossRevenue || 1), 1) * 100 },
+                { label: 'Less: Discounts Given', value: `- ${formatCurrency(revenueReport.totalDiscount)}`, color: 'text-rose-400', bar: 'bg-rose-500', pct: Number(revenueReport.totalDiscount || 0) / Math.max(Number(revenueReport.grossRevenue || 1), 1) * 100 },
+              ].map((row, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-2/5 min-w-0">
+                    <span className="text-xs font-semibold text-slate-400">{row.label}</span>
+                  </div>
+                  <div className="flex-1 h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${row.bar} rounded-full transition-all duration-700`} style={{ width: `${Math.min(row.pct, 100)}%` }} />
+                  </div>
+                  <span className={`w-28 text-right text-sm font-bold font-digit ${row.color}`}>{row.value}</span>
+                </div>
+              ))}
+              {/* Net Revenue Separator */}
+              <div className="border-t-2 border-dashed border-slate-700 pt-3 mt-3 flex items-center justify-between">
+                <span className="text-sm font-black text-emerald-400 uppercase tracking-wider">= Net Revenue (After Tax & Discounts)</span>
+                <span className="text-xl font-black text-emerald-400 font-digit">{formatCurrency(revenueReport.netRevenue)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tax & Discount Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
-              <p className="text-xs font-medium text-slate-500 mb-2">Total CGST</p>
-              <p className="text-xl font-bold text-cyan-400">{formatCurrency(revenueReport.totalCgst)}</p>
+            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total CGST</p>
+              </div>
+              <p className="text-2xl font-black text-cyan-400 font-digit">{formatCurrency(revenueReport.totalCgst)}</p>
+              <p className="text-[10px] text-slate-600 mt-1">Central Goods & Services Tax</p>
             </div>
-            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
-              <p className="text-xs font-medium text-slate-500 mb-2">Total SGST</p>
-              <p className="text-xl font-bold text-cyan-400">{formatCurrency(revenueReport.totalSgst)}</p>
+            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-teal-400" />
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total SGST</p>
+              </div>
+              <p className="text-2xl font-black text-teal-400 font-digit">{formatCurrency(revenueReport.totalSgst)}</p>
+              <p className="text-[10px] text-slate-600 mt-1">State Goods & Services Tax</p>
             </div>
-            <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
-              <p className="text-xs font-medium text-slate-500 mb-2">Total Discount</p>
-              <p className="text-xl font-bold text-rose-400">{formatCurrency(revenueReport.totalDiscount)}</p>
+            <div className="bg-slate-900 rounded-2xl border border-slate-700 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-rose-400" />
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Discount</p>
+              </div>
+              <p className="text-2xl font-black text-rose-400 font-digit">{formatCurrency(revenueReport.totalDiscount)}</p>
+              <p className="text-[10px] text-slate-600 mt-1">Customer Discounts & Offers</p>
             </div>
           </div>
 
-          {revenueReport.revenueByPaymentMethod && Object.keys(revenueReport.revenueByPaymentMethod).length > 0 && (
-            <div className="bg-slate-900 rounded-xl border border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-slate-200 mb-4">Revenue by Payment Method</h3>
-              <div className="space-y-3">
-                {Object.entries(revenueReport.revenueByPaymentMethod).map(([method, amount]) => (
-                  <div key={method} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">{method}</span>
-                    <span className="font-semibold text-cyan-400">{formatCurrency(amount)}</span>
-                  </div>
-                ))}
+          {/* Payment Method Breakdown + Category Revenue */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {revenueReport.revenueByPaymentMethod && Object.keys(revenueReport.revenueByPaymentMethod).length > 0 && (
+              <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
+                <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-5">Revenue by Payment Method</h3>
+                <div className="space-y-4">
+                  {(() => {
+                    const entries = Object.entries(revenueReport.revenueByPaymentMethod);
+                    const maxVal = Math.max(...entries.map(([, v]) => Number(v)), 1);
+                    const methodColors = { CASH: 'bg-emerald-500', UPI: 'bg-violet-500', CARD: 'bg-blue-500', BANK_TRANSFER: 'bg-cyan-500', CREDIT: 'bg-amber-500', INSURANCE: 'bg-teal-500' };
+                    return entries.map(([method, amount]) => (
+                      <div key={method}>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="text-xs font-bold text-slate-400 uppercase">{method.replace(/_/g, ' ')}</span>
+                          <span className="text-sm font-black text-white font-digit">{formatCurrency(amount)}</span>
+                        </div>
+                        <div className="h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full ${methodColors[method] || 'bg-slate-500'} rounded-full transition-all duration-500`} style={{ width: `${(Number(amount) / maxVal) * 100}%` }} />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {revenueReport.revenueByCategory && Object.keys(revenueReport.revenueByCategory).length > 0 && (
-            <div className="bg-slate-900 rounded-xl border border-slate-700 p-6">
-              <h3 className="text-lg font-semibold text-slate-200 mb-4">Revenue by Category</h3>
-              <div className="space-y-3">
-                {Object.entries(revenueReport.revenueByCategory).map(([category, amount]) => (
-                  <div key={category} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-400">{category}</span>
-                    <span className="font-semibold text-emerald-400">{formatCurrency(amount)}</span>
-                  </div>
-                ))}
+            {revenueReport.revenueByCategory && Object.keys(revenueReport.revenueByCategory).length > 0 && (
+              <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6">
+                <h3 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-5">Revenue by Category</h3>
+                <div className="space-y-4">
+                  {(() => {
+                    const entries = Object.entries(revenueReport.revenueByCategory);
+                    const total = entries.reduce((s, [, v]) => s + Number(v), 0) || 1;
+                    return entries.map(([category, amount], idx) => {
+                      const pct = ((Number(amount) / total) * 100).toFixed(1);
+                      return (
+                        <div key={category}>
+                          <div className="flex justify-between mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                              <span className="text-xs font-bold text-slate-400">{category}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-black text-slate-600">{pct}%</span>
+                              <span className="text-sm font-black text-emerald-400 font-digit">{formatCurrency(amount)}</span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: COLORS[idx % COLORS.length] }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 

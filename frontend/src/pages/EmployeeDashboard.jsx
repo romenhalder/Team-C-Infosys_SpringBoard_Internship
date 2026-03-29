@@ -253,6 +253,7 @@ const EmployeeDashboard = () => {
                     <tr className="border-b border-slate-800 bg-slate-950/40">
                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Time</th>
                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Patient / Mobile</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Items Dispensed</th>
                        <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Amount</th>
                        <th className="px-6 py-4 text-right"></th>
                     </tr>
@@ -275,6 +276,18 @@ const EmployeeDashboard = () => {
                                 <p className="text-sm font-black text-slate-200 uppercase">{sale.customerName || 'Walk-in'}</p>
                                 <p className="text-[10px] text-slate-600 font-bold">{sale.customerMobile || '—'}</p>
                               </div>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                           <div className="flex flex-col">
+                             {sale.items?.slice(0, 2).map((item, idx) => (
+                               <span key={idx} className="text-[11px] font-bold text-slate-300">
+                                 {item.medicationName || 'Product'} <span className="text-emerald-400 font-digit">x{item.quantity}</span>
+                               </span>
+                             ))}
+                             {sale.items?.length > 2 && (
+                               <span className="text-[9px] font-black text-slate-500 mt-0.5 tracking-widest uppercase">+{sale.items.length - 2} more...</span>
+                             )}
                            </div>
                         </td>
                         <td className="px-6 py-4 text-right font-black text-white font-digit">

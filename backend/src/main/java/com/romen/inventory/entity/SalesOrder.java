@@ -149,8 +149,10 @@ public class SalesOrder {
             if (item.getSgstAmount() != null) sgstAmount = sgstAmount.add(item.getSgstAmount());
         }
 
+        // GST is tracked internally for accounting/compliance but NOT added to customer bill.
+        // Customer pays exactly: SP × Qty - Discount
         this.taxAmount = cgstAmount.add(sgstAmount);
-        this.totalAmount = subtotal.add(taxAmount).subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO);
+        this.totalAmount = subtotal.subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO);
     }
 
     @PrePersist

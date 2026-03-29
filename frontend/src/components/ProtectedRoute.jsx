@@ -12,7 +12,7 @@ const ProtectedRoute = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#ecfdf5]">
+    <div className="min-h-screen bg-mesh-dark">
       <Navbar />
       <div className="flex">
         <Sidebar />

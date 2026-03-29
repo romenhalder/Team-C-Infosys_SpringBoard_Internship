@@ -70,24 +70,24 @@ const ModernStatCard = ({ title, rawValue, prefix = '', suffix = '', icon: Icon,
     <div
       ref={ref}
       onClick={onClick}
-      className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-teal-500 hover:shadow-lg transition-all duration-300 cursor-pointer group animate-fade-slide-up"
+      className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800 hover:border-cyan-500/50 hover:shadow-cyan-500/20 transition-all duration-300 cursor-pointer group animate-fade-slide-up shadow-lg"
       style={{ animationDelay: `${delay * 80}ms` }}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">{title}</p>
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wide">{title}</p>
           <div className="flex items-baseline gap-2">
-            {prefix && <span className="text-3xl font-bold text-slate-800">{prefix}</span>}
-            <span className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            {prefix && <span className="text-3xl font-bold text-slate-300">{prefix}</span>}
+            <span className="text-4xl font-extrabold text-white tracking-tight">
               {value.toLocaleString('en-IN')}
             </span>
-            {suffix && <span className="text-lg font-semibold text-slate-600">{suffix}</span>}
+            {suffix && <span className="text-lg font-semibold text-slate-300">{suffix}</span>}
           </div>
           {description && (
-            <p className="text-xs text-slate-400 mt-1">{description}</p>
+            <p className="text-xs text-slate-500 mt-1">{description}</p>
           )}
           {trend !== undefined && (
-            <div className={`flex items-center gap-1 text-sm font-semibold ${trend >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <div className={`flex items-center gap-1 text-sm font-semibold ${trend >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {trend >= 0 ? <ArrowTrendingUpIcon className="h-4 w-4" /> : <ArrowTrendingDownIcon className="h-4 w-4" />}
               <span>{Math.abs(trend)}% vs last period</span>
             </div>
@@ -107,20 +107,20 @@ const ModernStatCard = ({ title, rawValue, prefix = '', suffix = '', icon: Icon,
 const AlertCard = ({ item, onNavigate }) => (
   <div 
     onClick={onNavigate}
-    className="flex items-center justify-between p-4 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all cursor-pointer group"
+    className="flex items-center justify-between p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500/20 transition-all cursor-pointer group"
   >
     <div className="flex items-center gap-4">
-      <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
-        <ExclamationTriangleIcon className="h-5 w-5 text-rose-600" />
+      <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
+        <ExclamationTriangleIcon className="h-5 w-5 text-rose-500" />
       </div>
       <div>
-        <p className="font-semibold text-slate-800 group-hover:text-rose-700">{item.productName}</p>
-        <p className="text-sm text-slate-500">{item.message || 'Low stock alert'}</p>
+        <p className="font-semibold text-rose-100 group-hover:text-white transition-colors">{item.productName}</p>
+        <p className="text-sm text-rose-400/80">{item.message || 'Low stock alert'}</p>
       </div>
     </div>
     <div className="text-right">
-      <p className="text-2xl font-bold text-rose-600">{item.currentQuantity}</p>
-      <p className="text-xs text-slate-500">units left</p>
+      <p className="text-2xl font-bold text-rose-500">{item.currentQuantity}</p>
+      <p className="text-xs text-rose-500/50 uppercase tracking-wider font-bold">units left</p>
     </div>
   </div>
 );
@@ -128,12 +128,12 @@ const AlertCard = ({ item, onNavigate }) => (
 const QuickActionButton = ({ icon: Icon, label, onClick, color }) => (
   <button
     onClick={onClick}
-    className="flex flex-col items-center justify-center p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-teal-500 hover:bg-teal-50 transition-all duration-300 group"
+    className="flex flex-col items-center justify-center p-4 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-cyan-500/50 hover:bg-slate-800 transition-all duration-300 group shadow-md"
   >
     <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors" style={{ backgroundColor: `${color}15` }}>
       <Icon className="h-6 w-6" style={{ color }} />
     </div>
-    <p className="text-sm font-semibold text-slate-700 group-hover:text-teal-700">{label}</p>
+    <p className="text-sm font-semibold text-slate-300 group-hover:text-cyan-400">{label}</p>
   </button>
 );
 
@@ -190,18 +190,18 @@ const AdminDashboard = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 animate-fade-slide-up">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-            <span className="text-xs font-semibold text-teal-600 uppercase tracking-wider">Live Dashboard</span>
+            <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse shadow-glow-cyan" />
+            <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Live Dashboard</span>
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">{user?.fullName?.split(' ')[0]}</span>
+          <h1 className="text-4xl font-extrabold text-white tracking-tight">
+            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">{user?.fullName?.split(' ')[0]}</span>
           </h1>
-          <p className="text-slate-500 font-medium flex items-center gap-3">
+          <p className="text-slate-400 font-medium flex items-center gap-3">
             <span className="flex items-center gap-1">
               <ClockIcon className="h-4 w-4" />
               {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </span>
-            <span className="w-1 h-1 rounded-full bg-slate-300" />
+            <span className="w-1 h-1 rounded-full bg-slate-600" />
             <span>{currentTime.toLocaleTimeString()}</span>
           </p>
         </div>
@@ -210,7 +210,7 @@ const AdminDashboard = () => {
           {isAdmin && passwordResetCount > 0 && (
             <Link
               to="/password-reset-requests"
-              className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 hover:bg-amber-100 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-500 hover:bg-amber-500/20 transition-all shadow-glow-amber"
             >
               <KeyIcon className="h-5 w-5" />
               <span className="text-sm font-semibold">{passwordResetCount} Reset Requests</span>
@@ -218,7 +218,7 @@ const AdminDashboard = () => {
           )}
           <button
             onClick={() => navigate('/sell')}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 text-slate-950 font-bold rounded-xl shadow-glow-cyan hover:-translate-y-0.5 transition-all"
           >
             <PlusCircleIcon className="h-5 w-5" />
             <span>New Dispense</span>
@@ -271,40 +271,40 @@ const AdminDashboard = () => {
 
       {/* Secondary Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-            <ArchiveBoxIcon className="h-6 w-6 text-emerald-600" />
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-4 hover:shadow-glow-emerald transition-all">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+            <ArchiveBoxIcon className="h-6 w-6 text-emerald-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-emerald-700">{stockStatus.inStock}</p>
-            <p className="text-sm text-emerald-600 font-medium">In Stock</p>
+            <p className="text-2xl font-bold text-white">{stockStatus.inStock}</p>
+            <p className="text-sm text-emerald-400 font-medium">In Stock</p>
           </div>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <ExclamationTriangleIcon className="h-6 w-6 text-amber-600" />
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-4 hover:shadow-glow-amber transition-all">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center">
+            <ExclamationTriangleIcon className="h-6 w-6 text-amber-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-amber-700">{stockStatus.lowStockItems}</p>
-            <p className="text-sm text-amber-600 font-medium">Low Stock</p>
+            <p className="text-2xl font-bold text-white">{stockStatus.lowStockItems}</p>
+            <p className="text-sm text-amber-400 font-medium">Low Stock</p>
           </div>
         </div>
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center">
-            <ArchiveBoxIcon className="h-6 w-6 text-rose-600" />
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 flex items-center gap-4 hover:shadow-glow-rose transition-all">
+          <div className="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center">
+            <ArchiveBoxIcon className="h-6 w-6 text-rose-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-rose-700">{stockStatus.outOfStock}</p>
-            <p className="text-sm text-rose-600 font-medium">Out of Stock</p>
+            <p className="text-2xl font-bold text-white">{stockStatus.outOfStock}</p>
+            <p className="text-sm text-rose-400 font-medium">Out of Stock</p>
           </div>
         </div>
-        <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center">
-            <BellAlertIcon className="h-6 w-6 text-teal-600" />
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4 flex items-center gap-4 hover:shadow-glow-cyan transition-all">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+            <BellAlertIcon className="h-6 w-6 text-cyan-400" />
           </div>
           <div>
-            <p className="text-2xl font-bold text-teal-700">{unreadAlerts?.length || 0}</p>
-            <p className="text-sm text-teal-600 font-medium">Unread Alerts</p>
+            <p className="text-2xl font-bold text-white">{unreadAlerts?.length || 0}</p>
+            <p className="text-sm text-cyan-400 font-medium">Unread Alerts</p>
           </div>
         </div>
       </div>
@@ -313,18 +313,18 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Recent Sales Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm animate-fade-slide-up" style={{ animationDelay: '320ms' }}>
-          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+        <div className="lg:col-span-2 card-glass p-0 overflow-hidden animate-fade-slide-up" style={{ animationDelay: '320ms' }}>
+          <div className="px-6 py-5 border-b border-slate-800/50 bg-gradient-to-r from-slate-900 to-slate-800/50 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                <ClipboardDocumentListIcon className="h-5 w-5 text-teal-600" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 shadow-glow-cyan flex items-center justify-center">
+                <ClipboardDocumentListIcon className="h-5 w-5 text-cyan-400" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-800">Recent Transactions</h2>
-                <p className="text-sm text-slate-500">Latest dispensing records</p>
+                <h2 className="text-lg font-bold text-white">Recent Transactions</h2>
+                <p className="text-sm text-slate-400">Latest dispensing records</p>
               </div>
             </div>
-            <Link to="/transactions" className="text-sm font-semibold text-teal-600 hover:text-teal-700 flex items-center gap-1">
+            <Link to="/transactions" className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors">
               View All
               <ArrowTrendingUpIcon className="h-4 w-4" />
             </Link>
@@ -332,42 +332,49 @@ const AdminDashboard = () => {
           
           <div className="overflow-x-auto">
             {recentSales.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500">
                 <ClipboardDocumentListIcon className="h-16 w-16 mb-4 opacity-30" />
-                <p className="text-lg font-semibold">No transactions yet</p>
+                <p className="text-lg font-semibold text-slate-400">No transactions yet</p>
                 <p className="text-sm">Start a new dispense to see records here</p>
               </div>
             ) : (
-              <table className="w-full">
+              <table className="table-dark w-full border-none !shadow-none !rounded-none">
                 <thead>
-                  <tr className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="px-6 py-4">Order ID</th>
-                    <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Items</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Time</th>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Time</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800/50">
                   {recentSales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-teal-50/30 transition-colors">
+                    <tr key={sale.id} className="hover:bg-slate-800/50 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="font-mono text-sm font-semibold text-teal-600">{sale.orderNumber}</span>
+                        <span className="font-mono text-sm font-semibold text-cyan-400">{sale.orderNumber}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-slate-800">{sale.customerName || 'Walk-in'}</p>
+                        <p className="font-semibold text-slate-200">{sale.customerName || 'Walk-in'}</p>
                         <p className="text-xs text-slate-500">{sale.customerMobile || 'N/A'}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">
-                          {sale.items?.length || 0} SKUs
-                        </span>
+                        <div className="flex flex-col">
+                          {sale.items?.slice(0, 2).map((item, idx) => (
+                            <span key={idx} className="text-xs font-semibold text-slate-300">
+                              {item.medicationName || 'Product'} <span className="text-cyan-400">x{item.quantity}</span>
+                            </span>
+                          ))}
+                          {sale.items?.length > 2 && (
+                            <span className="text-[10px] text-slate-500 mt-0.5">+{sale.items.length - 2} more...</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-bold text-emerald-600">₹{sale.totalAmount}</span>
+                        <span className="font-bold text-emerald-400">₹{sale.totalAmount}</span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-500">{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-sm text-slate-400">{new Date(sale.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </td>
                     </tr>
                   ))}
@@ -375,42 +382,40 @@ const AdminDashboard = () => {
               </table>
             )}
           </div>
-        </div>
-
-        {/* Right Column - Quick Actions & System Status */}
+        </div>        {/* Right Column - Quick Actions & System Status */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm animate-fade-slide-up" style={{ animationDelay: '400ms' }}>
-            <h3 className="text-lg font-bold text-slate-800 mb-5">Quick Actions</h3>
+          <div className="card-glass animate-fade-slide-up" style={{ animationDelay: '400ms' }}>
+            <h3 className="text-lg font-bold text-white mb-5">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-4">
               <QuickActionButton icon={BeakerIcon} label="Add Product" onClick={() => navigate('/products/add')} color="#8B5CF6" />
               <QuickActionButton icon={ArchiveBoxIcon} label="Update Stock" onClick={() => navigate('/inventory/update')} color="#3B82F6" />
-              <QuickActionButton icon={UserGroupIcon} label="Staff" onClick={() => navigate('/employees')} color="#14B8A6" />
+              <QuickActionButton icon={UserGroupIcon} label="Staff" onClick={() => navigate('/employees')} color="#22D3EE" />
               <QuickActionButton icon={TruckIcon} label="Suppliers" onClick={() => navigate('/suppliers')} color="#F59E0B" />
             </div>
           </div>
 
           {/* System Health */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm animate-fade-slide-up" style={{ animationDelay: '480ms' }}>
+          <div className="card-glass animate-fade-slide-up" style={{ animationDelay: '480ms' }}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-800">System Status</h3>
+              <h3 className="text-lg font-bold text-white">System Status</h3>
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-semibold text-emerald-600">Operational</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-glow-emerald" />
+                <span className="text-xs font-semibold text-emerald-400">Operational</span>
               </div>
             </div>
             <div className="space-y-3">
               {[
                 { label: 'Database Connection', status: 'Connected', color: 'emerald' },
                 { label: 'Inventory Sync', status: lowStock.length === 0 ? 'Synced' : 'Needs Attention', color: lowStock.length === 0 ? 'emerald' : 'amber' },
-                { label: 'Compliance Status', status: 'GXP Compliant', color: 'teal' },
+                { label: 'Compliance Status', status: 'GXP Compliant', color: 'cyan' },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                  <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors">
+                  <span className="text-sm font-medium text-slate-300">{item.label}</span>
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    item.color === 'emerald' ? 'bg-emerald-100 text-emerald-700' : 
-                    item.color === 'amber' ? 'bg-amber-100 text-amber-700' : 
-                    'bg-teal-100 text-teal-700'
+                    item.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+                    item.color === 'amber' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 
+                    'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                   }`}>{item.status}</span>
                 </div>
               ))}
@@ -421,18 +426,18 @@ const AdminDashboard = () => {
 
       {/* Low Stock Alerts Section */}
       {lowStock.length > 0 && (
-        <div className="bg-white rounded-2xl border border-rose-200 overflow-hidden shadow-sm animate-fade-slide-up">
-          <div className="px-6 py-5 border-b border-rose-100 bg-gradient-to-r from-rose-50 to-white flex items-center justify-between">
+        <div className="bg-slate-900/50 rounded-2xl border border-rose-500/30 overflow-hidden shadow-glow-rose animate-fade-slide-up">
+          <div className="px-6 py-5 border-b border-rose-500/20 bg-gradient-to-r from-rose-500/10 to-transparent flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 flex items-center justify-center">
-                <ExclamationTriangleIcon className="h-5 w-5 text-rose-600" />
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                <ExclamationTriangleIcon className="h-5 w-5 text-rose-500" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-slate-800">Stock Alerts</h2>
-                <p className="text-sm text-slate-500">{lowStock.length} items require attention</p>
+                <h2 className="text-lg font-bold text-white">Stock Alerts</h2>
+                <p className="text-sm text-slate-400">{lowStock.length} items require attention</p>
               </div>
             </div>
-            <button onClick={() => navigate('/alerts')} className="text-sm font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1">
+            <button onClick={() => navigate('/alerts')} className="text-sm font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors">
               Resolve All
               <ArrowTrendingUpIcon className="h-4 w-4" />
             </button>

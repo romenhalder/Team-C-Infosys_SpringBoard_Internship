@@ -113,7 +113,7 @@ public class SalesService {
                         .cgstAmount(cgst)
                         .sgstAmount(sgst)
                         .discountAmount(discount)
-                        .totalPrice(lineTotal.add(gstAmount).subtract(discount))
+                        .totalPrice(lineTotal.subtract(discount))
                         .gstSlab(gstSlab)
                         .hsnCode(medication.getHsnCode())
                         .build();

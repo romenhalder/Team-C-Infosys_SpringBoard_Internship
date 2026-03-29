@@ -299,30 +299,53 @@ const SellProduct = () => {
               </div>
            </div>
 
-           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-              {cart.map((item, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 group animate-fade-slide-up">
-                  <div className="flex justify-between mb-3">
-                    <h5 className="text-[13px] font-black text-slate-200 truncate uppercase">{item.productName}</h5>
-                    <button onClick={() => removeLineItem(idx)} className="text-slate-600 hover:text-rose-500 transition-colors"><TrashIcon className="h-4 w-4" /></button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center bg-slate-950/50 rounded-lg p-1 border border-slate-800">
-                      <button onClick={() => updateQuantity(idx, -1)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-800">
-                        <MinusIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="w-10 text-center text-xs font-black font-digit text-cyan-400">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(idx, 1)} className="w-7 h-7 flex items-center justify-center rounded hover:bg-slate-800">
-                        <PlusIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="text-right">
-                       <p className="text-[9px] font-black text-slate-600 uppercase">Subtotal</p>
-                       <p className="text-sm font-black text-white font-digit">₹{item.totalPrice}</p>
-                    </div>
-                  </div>
+           <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {cart.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center opacity-20">
+                  <ShoppingCartIcon className="h-16 w-16 mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em]">Cart Empty</p>
                 </div>
-              ))}
+              ) : (
+                <div className="divide-y divide-slate-800/50">
+                  <div className="px-4 py-2 bg-slate-950/40 flex items-center justify-between sticky top-0 z-10">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{cart.length} Item{cart.length > 1 ? 's' : ''}</span>
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Subtotal</span>
+                  </div>
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="px-4 py-3 hover:bg-slate-900/40 transition-colors group">
+                      <div className="flex items-center justify-between gap-3">
+                        {/* Remove Button */}
+                        <button 
+                          onClick={() => removeLineItem(idx)} 
+                          className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-slate-700 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
+                        >
+                          <TrashIcon className="h-3.5 w-3.5" />
+                        </button>
+                        
+                        {/* Name + Unit Price */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-bold text-slate-200 truncate uppercase leading-tight">{item.productName}</p>
+                          <p className="text-[9px] font-bold text-slate-600">₹{item.unitPrice} / unit</p>
+                        </div>
+                        
+                        {/* Qty Controls - Compact */}
+                        <div className="flex items-center bg-slate-950/60 rounded-lg border border-slate-800 flex-shrink-0">
+                          <button onClick={() => updateQuantity(idx, -1)} className="w-6 h-6 flex items-center justify-center rounded-l-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                            <MinusIcon className="h-3 w-3" />
+                          </button>
+                          <span className="w-8 text-center text-[11px] font-black font-digit text-cyan-400">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(idx, 1)} className="w-6 h-6 flex items-center justify-center rounded-r-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">
+                            <PlusIcon className="h-3 w-3" />
+                          </button>
+                        </div>
+                        
+                        {/* Line Total */}
+                        <span className="text-sm font-black text-white font-digit w-16 text-right flex-shrink-0">₹{item.totalPrice}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
            </div>
 
            <div className="p-6 bg-slate-950/50 border-t border-slate-800 space-y-6">
@@ -355,31 +378,135 @@ const SellProduct = () => {
 
       {showReceiptModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-fade-in">
-           <div className="max-w-md w-full card-glass p-8 text-center space-y-6 border-t-4 border-t-emerald-500 shadow-glow-emerald">
+           <div className="max-w-lg w-full card-glass p-8 text-center space-y-6 border-t-4 border-t-emerald-500 shadow-glow-emerald">
               <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center"><ClipboardDocumentCheckIcon className="h-10 w-10 text-emerald-500" /></div>
               <h3 className="text-2xl font-black text-white">Dispense Complete</h3>
-              <p className="text-xs text-slate-400 uppercase tracking-widest">Order ID: #{lastCreatedSale?.orderNumber}</p>
-              <div className="grid grid-cols-2 gap-3 mt-8">
+              <p className="text-xs text-slate-400 uppercase tracking-widest">Invoice: #{lastCreatedSale?.orderNumber}</p>
+              
+              {/* Quick Summary */}
+              {lastCreatedSale && (
+                <div className="text-left bg-slate-950/40 rounded-xl p-4 border border-slate-800 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                  {lastCreatedSale.items?.map((item, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-slate-300 truncate mr-2">{item.medicationName || item.productName} <span className="text-cyan-400">x{item.quantity}</span></span>
+                      <span className="text-white font-bold font-digit flex-shrink-0">₹{item.totalPrice}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-slate-700 pt-2 mt-2 flex justify-between">
+                    <span className="text-xs font-black text-slate-400 uppercase">Total</span>
+                    <span className="text-lg font-black text-emerald-400 font-digit">₹{lastCreatedSale.totalAmount}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
                  <button onClick={() => setShowReceiptModal(false)} className="btn-secondary h-12 text-[10px] font-black uppercase">New Session</button>
                  <button 
                   onClick={() => {
+                    if (!lastCreatedSale) return;
+                    const sale = lastCreatedSale;
                     const doc = new jsPDF();
-                    doc.setFontSize(22);
-                    doc.text('PharmaTrack Pro - Receipt', 20, 20);
-                    doc.setFontSize(10);
-                    doc.text(`Order: ${lastCreatedSale.orderNumber}`, 20, 30);
-                    doc.text(`Patient: ${lastCreatedSale.customerName || 'N/A'}`, 20, 35);
+                    const pw = doc.internal.pageSize.width;
+                    let y = 14;
+
+                    // === HEADER ===
+                    doc.setFillColor(15, 23, 42);
+                    doc.rect(0, 0, pw, 38, 'F');
+                    doc.setTextColor(255); doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+                    doc.text('\u211e PharmaTrack Pro', 14, y + 6);
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+                    doc.text('TAX INVOICE', pw - 14, y + 4, { align: 'right' });
+                    doc.setFontSize(8);
+                    doc.text(`Invoice #: ${sale.orderNumber}`, pw - 14, y + 10, { align: 'right' });
+                    doc.text(`Date: ${new Date(sale.createdAt || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, pw - 14, y + 16, { align: 'right' });
+                    doc.text('GSTIN: XXXXXXXXXXXX', 14, y + 16);
+                    doc.text('Lic. No: XX-XXXXX', 14, y + 22);
+
+                    y = 46;
+                    doc.setTextColor(0);
+                    
+                    // === PATIENT INFO ===
+                    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+                    doc.text('Bill To:', 14, y);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`Patient: ${sale.customerName || 'Walk-in Customer'}`, 14, y + 5);
+                    doc.text(`Mobile: ${sale.customerMobile || 'N/A'}`, 14, y + 10);
+                    if (sale.doctorName) doc.text(`Dr. ${sale.doctorName} (Reg: ${sale.doctorRegNumber || 'N/A'})`, pw/2, y + 5);
+                    doc.text(`Payment: ${sale.paymentMethod || 'CASH'}`, pw/2, y + 10);
+
+                    y += 18;
+
+                    // === ITEMS TABLE ===
+                    const items = sale.items || [];
+                    const tableBody = items.map((item, i) => [
+                      String(i + 1),
+                      item.medicationName || item.productName || 'Item',
+                      item.hsnCode || '-',
+                      String(item.quantity),
+                      `\u20b9${Number(item.unitPrice || 0).toFixed(2)}`,
+                      `${Number(item.gstSlab || 0)}%`,
+                      `\u20b9${Number(item.totalPrice || 0).toFixed(2)}`,
+                    ]);
+
                     doc.autoTable({
-                      startY: 45,
-                      head: [['Medication', 'Qty', 'Price', 'Total']],
-                      body: lastCreatedSale.items.map(item => [item.productName, item.quantity, item.unitPrice, item.totalPrice]),
+                      startY: y,
+                      head: [['#', 'Medicine', 'HSN', 'Qty', 'Rate', 'GST%', 'Amount']],
+                      body: tableBody,
+                      theme: 'grid',
+                      headStyles: { fillColor: [6, 182, 212], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 8, halign: 'center' },
+                      bodyStyles: { fontSize: 8 },
+                      columnStyles: {
+                        0: { halign: 'center', cellWidth: 10 },
+                        1: { cellWidth: 55 },
+                        2: { halign: 'center', cellWidth: 18 },
+                        3: { halign: 'center', cellWidth: 14 },
+                        4: { halign: 'right', cellWidth: 22 },
+                        5: { halign: 'center', cellWidth: 16 },
+                        6: { halign: 'right', cellWidth: 25 },
+                      },
+                      margin: { left: 14, right: 14 },
                     });
-                    doc.text(`Total: Rs. ${lastCreatedSale.totalAmount}`, 150, doc.lastAutoTable.finalY + 10);
-                    doc.save(`receipt_${lastCreatedSale.orderNumber}.pdf`);
+
+                    y = doc.lastAutoTable.finalY + 8;
+
+                    // === TOTALS ===
+                    const subtotal = Number(sale.subtotal || sale.totalAmount || 0);
+                    const cgst = Number(sale.cgstAmount || 0);
+                    const sgst = Number(sale.sgstAmount || 0);
+                    const discount = Number(sale.discountAmount || 0);
+                    const total = Number(sale.totalAmount || 0);
+
+                    const summaryX = pw - 80;
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+                    doc.text('Subtotal:', summaryX, y); doc.text(`\u20b9${subtotal.toFixed(2)}`, pw - 14, y, { align: 'right' }); y += 5;
+                    doc.text('CGST:', summaryX, y); doc.text(`\u20b9${cgst.toFixed(2)}`, pw - 14, y, { align: 'right' }); y += 5;
+                    doc.text('SGST:', summaryX, y); doc.text(`\u20b9${sgst.toFixed(2)}`, pw - 14, y, { align: 'right' }); y += 5;
+                    if (discount > 0) {
+                      doc.text('Discount:', summaryX, y); doc.text(`-\u20b9${discount.toFixed(2)}`, pw - 14, y, { align: 'right' }); y += 5;
+                    }
+                    doc.setDrawColor(100); doc.line(summaryX, y, pw - 14, y); y += 4;
+                    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+                    doc.text('Total:', summaryX, y); doc.text(`\u20b9${total.toFixed(2)}`, pw - 14, y, { align: 'right' }); y += 10;
+
+                    // === FOOTER ===
+                    doc.setFontSize(7); doc.setFont('helvetica', 'italic'); doc.setTextColor(130);
+                    doc.text('GST is computed internally on Cost Price for compliance. Customer total = SP x Qty.', 14, y);
+                    y += 5;
+                    doc.text('This is a computer-generated invoice. Thank you for your trust in PharmaTrack Pro.', 14, y);
+
+                    // Page footer
+                    const ph = doc.internal.pageSize.height;
+                    doc.setDrawColor(200); doc.line(14, ph - 12, pw - 14, ph - 12);
+                    doc.setFontSize(7); doc.setTextColor(150); doc.setFont('helvetica', 'normal');
+                    doc.text(`Generated: ${new Date().toLocaleString('en-IN')}`, 14, ph - 7);
+                    doc.text('PharmaTrack Pro \u2022 Internal Use', pw - 14, ph - 7, { align: 'right' });
+
+                    doc.save(`invoice_${sale.orderNumber}.pdf`);
                   }}
                   className="btn-success h-12 flex items-center justify-center space-x-2 text-[10px] font-black uppercase"
                  >
-                   Download Bill
+                   <PrinterIcon className="h-4 w-4" />
+                   <span>Print Invoice</span>
                  </button>
               </div>
            </div>
