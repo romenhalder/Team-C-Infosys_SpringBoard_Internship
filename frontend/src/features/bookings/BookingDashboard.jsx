@@ -9,7 +9,7 @@ import {
     createBooking, updateBooking, clearBookingSuccess, clearBookingError,
 } from './bookingSlice';
 
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const EVENT_ICONS = { BIRTHDAY: '🎂', WEDDING: '💒', RECEPTION: '🎉', ANNIVERSARY: '💝', CORPORATE: '🏢', FESTIVAL: '🪔', OTHER: '📋' };
 const STATUS_STYLES = {

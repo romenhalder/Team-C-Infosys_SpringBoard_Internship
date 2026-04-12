@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -45,17 +45,22 @@ export const fetchInventoryByProduct = createAsyncThunk(
 
 export const updateStock = createAsyncThunk(
   'inventory/updateStock',
-  async ({ productId, quantity, type, reason }, { rejectWithValue }) => {
+  async (submitData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/inventory/update', {
-        productId,
-        quantity,
-        type,
-        reason,
-      });
+      // Ensure expiryDate is just a date string (YYYY-MM-DD) for backend LocalDate
+      if (submitData.expiryDate && submitData.expiryDate.includes('T')) {
+        submitData.expiryDate = submitData.expiryDate.split('T')[0];
+      }
+      
+      const response = await api.post('/inventory/update', submitData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update stock');
+      // Better error extraction
+      const message = error.response?.data?.message || 
+                     error.response?.data?.errors?.[0] || 
+                     error.response?.data?.error || 
+                     'Failed to update stock';
+      return rejectWithValue(message);
     }
   }
 );

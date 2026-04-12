@@ -262,12 +262,13 @@ const StockUpdate = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300">Batch Number</label>
+            <label className="block text-sm font-medium text-slate-300">Batch Number *</label>
             <input
               type="text"
               name="batchNumber"
               value={formData.batchNumber}
               onChange={handleChange}
+              required
               className="input-field mt-1"
               placeholder="Batch/Lot number"
             />

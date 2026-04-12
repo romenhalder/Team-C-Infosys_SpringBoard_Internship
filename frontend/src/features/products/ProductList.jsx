@@ -242,7 +242,7 @@ const ProductList = () => {
                         <div className="flex items-center">
                           {product.imageUrl && (
                             <img
-                              src={`http://localhost:8080/uploads/${product.imageUrl}`}
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/uploads/${product.imageUrl}`}
                               alt={product.name}
                               className="h-10 w-10 rounded-lg object-cover mr-3"
                               style={{ border: '1px solid var(--border-default)' }}

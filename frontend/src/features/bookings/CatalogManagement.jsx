@@ -5,7 +5,7 @@ import { fetchCatalog, createCatalogItem, updateCatalogItem, deleteCatalogItem, 
 
 const CATEGORIES = ['BIRTHDAY', 'WEDDING', 'ANNIVERSARY', 'PHOTO', 'DESIGNER', 'THEME', 'FESTIVAL', 'EGGLESS', 'CUSTOM'];
 const CAT_ICONS = { BIRTHDAY: '🎂', WEDDING: '💒', ANNIVERSARY: '💝', PHOTO: '📸', DESIGNER: '🎨', THEME: '🎭', FESTIVAL: '🪔', EGGLESS: '🥚', CUSTOM: '✨' };
-const API_URL = 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const formatCurrency = (a) => '₹' + Number(a || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 

@@ -14,7 +14,7 @@ import {
   CurrencyRupeeIcon,
 } from '@heroicons/react/24/outline';
 
-const API = 'http://localhost:8080';
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 // ── Expiry color coding (30-60-90 Rule) ──────────────────────────────────────
 const getExpiryStyle = (daysUntilExpiry, isQuarantined, isExpired) => {
