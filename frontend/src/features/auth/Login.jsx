@@ -6,8 +6,6 @@ import {
   ShieldCheckIcon, 
   LockClosedIcon, 
   UserIcon,
-  FingerPrintIcon,
-  CpuChipIcon,
 } from '@heroicons/react/24/outline';
 
 const Login = () => {
@@ -46,150 +44,120 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-mesh-dark flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
-      </div>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.03%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')]"></div>
+      
+      {/* Gradient Orbs */}
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"></div>
 
-      <div className="max-w-md w-full z-10">
-        {/* Superior Branding */}
-        <div className="text-center mb-10 animate-fade-slide-up stagger-1">
-          <div className="relative inline-block">
-            <div className="w-20 h-20 mx-auto rounded-3xl bg-slate-900 border border-cyan-500/30 flex items-center justify-center mb-6 shadow-glow-cyan">
-              <span className="text-4xl font-black text-gradient-cyan">℞</span>
-            </div>
-            <div className="absolute -top-1 -right-1">
-              <div className="flex items-center space-x-1 bg-slate-900/80 backdrop-blur-md border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">System Live</span>
-              </div>
-            </div>
+      <div className="w-full max-w-md relative">
+        {/* Logo Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 mb-4 shadow-lg shadow-cyan-500/20">
+            <span className="text-2xl font-bold text-white">Rx</span>
           </div>
-          
-          <h1 className="text-4xl font-black tracking-tight text-white mb-2">
+          <h1 className="text-2xl font-semibold text-white">
             PharmaTrack <span className="text-cyan-400">Pro</span>
           </h1>
-          <div className="flex items-center justify-center space-x-2 text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">
-            <CpuChipIcon className="h-3 w-3" />
-            <span>Advanced Inventory Control</span>
+          <p className="text-slate-400 text-sm mt-1">Pharmaceutical Inventory Management</p>
+        </div>
+
+        {/* Login Card */}
+        <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-8 shadow-2xl">
+          <div className="mb-6">
+            <h2 className="text-lg font-medium text-white">Welcome back</h2>
+            <p className="text-slate-400 text-sm">Enter your credentials to access your account</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-red-500/20">
+                <LockClosedIcon className="h-4 w-4 text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-red-400">{error}</p>
+              </div>
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email or Mobile
+              </label>
+              <div className="relative">
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                <input
+                  name="identifier"
+                  type="text"
+                  required
+                  value={formData.identifier}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('identifier')}
+                  className={`w-full pl-12 pr-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all ${isFieldValid('identifier') === false ? 'border-red-500/50 bg-red-500/5' : 'border-slate-700'}`}
+                  placeholder="Enter your email or mobile"
+                />
+              </div>
+              {isFieldValid('identifier') === false && (
+                <p className="text-xs text-red-400 mt-1.5">Please enter a valid identifier (min 3 characters)</p>
+              )}
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-slate-300">Password</label>
+                <Link to="/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <LockClosedIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={() => handleBlur('password')}
+                  className={`w-full pl-12 pr-4 py-3 bg-slate-800/50 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition-all ${isFieldValid('password') === false ? 'border-red-500/50 bg-red-500/5' : 'border-slate-700'}`}
+                  placeholder="Enter your password"
+                />
+              </div>
+              {isFieldValid('password') === false && (
+                <p className="text-xs text-red-400 mt-1.5">Password must be at least 6 characters</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white font-medium rounded-xl shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ShieldCheckIcon className="h-5 w-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-slate-800">
+            <p className="text-center text-sm text-slate-400">
+              Protected by 256-bit SSL encryption
+            </p>
           </div>
         </div>
 
-        {/* Access Terminal Card */}
-        <div className="card-glass p-0 overflow-hidden animate-fade-slide-up stagger-2 border-t-4 border-t-cyan-500">
-          <div className="bg-slate-900/50 border-b border-slate-800 px-8 py-4 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <LockClosedIcon className="h-4 w-4 text-cyan-500" />
-              <span className="text-xs font-black text-slate-300 tracking-widest uppercase">Secure Access Terminal</span>
-            </div>
-            <span className="text-[10px] font-mono text-slate-500">v3.4.0-REL</span>
-          </div>
-
-          <div className="p-8">
-            {error && (
-              <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start space-x-3 animate-shake">
-                <div className="p-1 rounded-lg bg-rose-500/20">
-                  <FingerPrintIcon className="h-5 w-5 text-rose-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-0.5">Authentication Failure</p>
-                  <p className="text-xs text-rose-400/80 leading-relaxed font-medium">{error}</p>
-                </div>
-              </div>
-            )}
-
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <div className="space-y-1.5">
-                <label className="text-label ml-1">Personnel Identifier</label>
-                <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    name="identifier"
-                    type="text"
-                    required
-                    value={formData.identifier}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('identifier')}
-                    className={`input-field pl-12 h-12 !bg-slate-900/40 border-slate-800 focus:border-cyan-500 transition-all ${isFieldValid('identifier') === false ? 'border-rose-500/50 bg-rose-500/5' : ''}`}
-                    placeholder="Email or Mobile"
-                  />
-                </div>
-                {isFieldValid('identifier') === false && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1.5 ml-1">Requires valid personnel ID</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center px-1">
-                  <label className="text-label">Access Passcode</label>
-                  <Link to="/forgot-password" title="Recover Access" className="text-[10px] font-black text-cyan-400 hover:text-cyan-300 uppercase tracking-wider transition-colors">
-                    Reset
-                  </Link>
-                </div>
-                <div className="relative group">
-                  <ShieldCheckIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
-                  <input
-                    name="password"
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={() => handleBlur('password')}
-                    className={`input-field pl-12 h-12 !bg-slate-900/40 border-slate-800 focus:border-cyan-500 transition-all ${isFieldValid('password') === false ? 'border-rose-500/50 bg-rose-500/5' : ''}`}
-                    placeholder="••••••••"
-                  />
-                </div>
-                {isFieldValid('password') === false && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1.5 ml-1">Minimum 6-character encryption</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 bg-cyan-500 text-slate-950 font-black text-sm rounded-xl shadow-glow-cyan hover:bg-cyan-400 hover:scale-[1.01] transition-all active:scale-[0.99] disabled:opacity-50 flex items-center justify-center space-x-2 tracking-[0.2em] uppercase"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-transparent border-t-slate-950" />
-                ) : (
-                  <>
-                    <span>Initialize Session</span>
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="mt-8 pt-6 border-t border-slate-800/50 flex items-center justify-between">
-              <p className="text-[10px] font-medium text-slate-500">
-                Unauthorized access is strictly monitored.
-              </p>
-              <div className="flex items-center space-x-1">
-                 <div className="w-1 h-1 rounded-full bg-cyan-500 shadow-[0_0_5px_rgba(34,211,238,0.5)]" />
-                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Encrypted</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Compliance Footer */}
-        <div className="mt-8 flex flex-col items-center space-y-4 animate-fade-slide-up stagger-3">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center space-x-2 text-slate-500 saturate-[0.5]">
-              <ShieldCheckIcon className="h-4 w-4" />
-              <span className="text-[9px] font-bold uppercase tracking-widest italic">GXP Compliant</span>
-            </div>
-            <div className="w-[1px] h-3 bg-slate-800" />
-            <div className="flex items-center space-x-2 text-slate-500 saturate-[0.5]">
-              <LockClosedIcon className="h-4 w-4" />
-              <span className="text-[9px] font-bold uppercase tracking-widest italic">HIPAA Ready</span>
-            </div>
-          </div>
-          
-          <p className="text-[10px] text-slate-600 font-medium">
-            &copy; {new Date().getFullYear()} PharmaTrack Systems International
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-slate-500">
+            &copy; {new Date().getFullYear()} PharmaTrack Pro. All rights reserved.
           </p>
         </div>
       </div>
